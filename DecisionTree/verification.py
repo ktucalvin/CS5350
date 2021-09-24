@@ -28,7 +28,7 @@ if __name__ == "__main__":
         X[:,i] = le.fit_transform(X[:,i])
         valX[:,i] = le.fit_transform(valX[:,i])
 
-    model = tree.DecisionTreeClassifier(max_depth=1e12)
+    model = tree.DecisionTreeClassifier(max_depth=1e6)
     model = model.fit(X, le.fit_transform(Y))
 
     training_predictions = le.inverse_transform(model.predict(X))
