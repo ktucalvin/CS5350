@@ -10,11 +10,11 @@ def entropy(S, labels):
         # - sum_i^K p_i log_2(p_i)
         sum = 0
         for lab in labels:
-            examples = [example for example in S if lab in example]
+            examples = [example for example in S if example[-1] == lab]
             if len(S) and len(examples):
                 p_i = len(examples) / len(S)
                 sum += p_i * np.log2(p_i)
-        return sum
+        return -sum
 
 def majority_error(S, labels):
     pass
@@ -30,40 +30,40 @@ class ID3:
     def __init__(self):
         self.tree = {}
 
-    def gain(self, S, values, measure, labels):
-        pass
+    def most_common_label(self, S):
+        uniq_labels, count = np.unique([x[-1] for x in S], return_counts=True)
+        return uniq_labels[np.argmax(count)]
+
+    def gain(self, S, values, measure, labels, index):
         # measure(S) - sum_{v in values(A)} (len(S_v) / len(S) measure(S_v))
         sum = 0
         for v in values:
-            S_v = [example for example in S if v in example]
+            S_v = [example for example in S if example[index] == v]
             sum += len(S_v) / len(S) * measure(S_v, labels)
         return measure(S, labels) - sum
 
     def train(self, S, attributes, labels, measure=entropy, max_depth=float("inf")):
-        self.tree = self.trainR(S, attributes, labels, measure, max_depth)
+        self.tree = self.trainR(S, attributes, list(attributes.keys()), labels, measure, max_depth)
 
-    def trainR(self, S, attributes, labels, measure=entropy, max_depth=float("inf"), depth=0):
+    def trainR(self, S, attributes, order, labels, measure=entropy, max_depth=float("inf"), depth=0):
         """Internal recursive training function"""
-
-        # if depth >= max_depth
-
         # if all examples have same label
         #   return a leaf node with that label
         if len(set([x[-1] for x in S])) == 1:
             return S[0][-1]
 
-        # if attributes is empty
+        # if attributes is empty OR exceeded depth
         #   return a leaf node with the most common label
-        if len(attributes.keys()) == 0:
-            uniq_labels, count = np.unique(labels, return_counts=True)
-            return uniq_labels[np.argmax(count)]
+        if len(attributes.keys()) == 0 or depth >= max_depth:
+            return self.most_common_label(S)
 
         # create root node for tree
         root = {}
         # A = attribute in attributes that best splits S
         attr = list(attributes.keys())
-        gains = [self.gain(S, attributes[a], measure, labels) for a in attr]
+        gains = [self.gain(S, attributes[a], measure, labels, attr.index(a)) for a in attr]
         A = attr[np.argmax(gains)]
+        indexA = order.index(A)
 
         # record in the tree which attribute we split on, for later traversal
         root[A] = {}
@@ -73,18 +73,17 @@ class ID3:
         #   add a new tree branch corresponding to A=v
             root[A][v] = {}
         #   let S_v be the subset of examples in S with A = v
-            S_v = [example for example in S if v in example]
+            S_v = [example for example in S if example[indexA] == v]
         #   if S_v is empty:
         #       add leaf node with the most common label in S
             if len(S_v) == 0:
-                uniq_labels, count = np.unique(labels, return_counts=True)
-                root[A][v] = uniq_labels[np.argmax(count)]
+                root[A][v] = self.most_common_label(S)
         #   else:
         #       below this branch add the subtree ID3(S_v, attributes - {A}, label)
             else:
                 newattr = copy.deepcopy(attributes)
                 del newattr[A]
-                root[A][v] = self.trainR(S_v, newattr, labels)
+                root[A][v] = self.trainR(S_v, newattr, order, labels, depth=(depth + 1))
         # return root node
         return root
 
@@ -109,38 +108,37 @@ class ID3:
 
 
 
-def run_shapes():
+def run_simple(dataset, attributes, labels, verbose=False):
     """Run ID3 on the shapes dataset"""
     model = ID3()
     S = []
-    attributes = {
-        "color":   ["red", "green", "blue"],
-        "shape":    ["square", "circle", "triangle"]
-    }
-    labels = ["a", "b", "c"]
-    with open("./datasets/shapes/train.csv") as file:
+
+    with open(f"./datasets/{dataset}/train.csv") as file:
         for line in file:
-            [color, shape, label] = line.strip().split(',')
-            S.append((color, shape, label))
+            S.append(tuple(line.strip().split(',')))
 
     val = []
-    with open("./datasets/shapes/test.csv") as file:
+    with open(f"./datasets/{dataset}/test.csv") as file:
         for line in file:
-            [color, shape, label] = line.strip().split(',')
-            val.append((color, shape, label))
+            val.append(tuple(line.strip().split(',')))
 
     model.train(S, attributes, labels, measure=entropy)
 
-    predictions = [model.predict(input, ["color", "shape"]) for input in val]
-    correct_labels = [x[-1] for x in val]
+    predictions = [model.predict(input, list(attributes.keys())) for input in S]
+    correct_labels = [x[-1] for x in S]
+    correct_train = np.sum(np.array(predictions) == np.array(correct_labels))
 
-    print("\n Tree: ")
-    print(model.tree)
-    print("\n Predictions: ")
-    print(predictions)
-    correct = np.sum(np.array(predictions) == np.array(correct_labels))
-    print("\nAccuracy: ")
-    print(f"({correct}/{len(val)}) {float(correct) / len(val) :.3f} ")
+    predictions = [model.predict(input, list(attributes.keys())) for input in val]
+    correct_labels = [x[-1] for x in val]
+    correct_test = np.sum(np.array(predictions) == np.array(correct_labels))
+
+    if verbose:
+        print("\n Tree: ")
+        print(model.tree)
+        print("\n Predictions: ")
+        print(predictions)
+    print(f"Training Accuracy: ({correct_train}/{len(S)}) {float(correct_train) / len(S) :.3f} ")
+    print(f"Test Accuracy: ({correct_test}/{len(val)}) {float(correct_test) / len(val) :.3f} ")
 
 def run_car():
     # data-desc is not standardized, data has to be pre-processed
@@ -183,4 +181,32 @@ def run_car():
 
 if __name__ == "__main__":
     """ When run from CLI, just dump data necessary to do hw1 """
-    run_shapes()
+
+    # :NOTE: MUST declare attributes in same order as they are in the csv
+    shapes_attributes = {
+        "color":   ["red", "green", "blue"],
+        "shape":    ["square", "circle", "triangle"]
+    }
+    shapes_labels = ["a", "b", "c"]
+    run_simple("shapes", shapes_attributes, shapes_labels)
+
+    tennis_attributes = {
+        "outlook": ["sunny", "overcast", "rainy"],
+        "temperature": ["hot", "medium", "cool"],
+        "humidity": ["high", "normal", "low"],
+        "wind": ["strong", "weak"]
+    }
+    tennis_labels = ["0", "1"]
+    run_simple("tennis", tennis_attributes, tennis_labels)
+
+    car_attributes = {
+        "buying":   ["vhigh", "high", "med", "low"],
+        "maint":    ["vhigh", "high", "med", "low"],
+        "doors":    ["2", "3", "4", "5more"],
+        "persons":  ["2", "4", "more"],
+        "lug_boot": ["small", "med", "big"],
+        "safety":   ["low", "med", "high"]
+    }
+    car_labels = ["unacc", "acc", "good", "vgood"]
+    run_simple("car", car_attributes, car_labels)
+
