@@ -186,18 +186,18 @@ def run_debug_datasets(measure=entropy):
     run_simple("car", car_attributes, car_labels, measure, max_depth=6)
 
 def run_hw1_car():
-    car_data = []
+    S = []
 
     with open("./datasets/car/train.csv") as file:
         for line in file:
-            car_data.append(tuple(line.strip().split(',')))
+            S.append(tuple(line.strip().split(',')))
 
-    car_val = []
+    val = []
     with open("./datasets/car/test.csv") as file:
         for line in file:
-            car_val.append(tuple(line.strip().split(',')))
+            val.append(tuple(line.strip().split(',')))
 
-    car_attributes = {
+    attributes = {
         "buying":   ["vhigh", "high", "med", "low"],
         "maint":    ["vhigh", "high", "med", "low"],
         "doors":    ["2", "3", "4", "5more"],
@@ -205,28 +205,28 @@ def run_hw1_car():
         "lug_boot": ["small", "med", "big"],
         "safety":   ["low", "med", "high"]
     }
-    car_labels = ["unacc", "acc", "good", "vgood"]
+    labels = ["unacc", "acc", "good", "vgood"]
 
-    car_train_results = []
-    car_test_results = []
+    train_results = []
+    test_results = []
     for depth in range(6):
         depth = depth + 1
         model = ID3()
         for measure in [entropy, majority_error, gini_index]:
             # Train model with set depth and measure
-            model.train(car_data, car_attributes, car_labels, measure, max_depth=depth)
+            model.train(S, attributes, labels, measure, max_depth=depth)
 
             # Predict on training set
-            predictions = [model.predict(input, list(car_attributes.keys())) for input in car_data]
-            correct_labels = [x[-1] for x in car_data]
+            predictions = [model.predict(input, list(attributes.keys())) for input in S]
+            correct_labels = [x[-1] for x in S]
             num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
-            car_train_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(car_data)))
+            train_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(S)))
 
             # Predict on test set
-            predictions = [model.predict(input, list(car_attributes.keys())) for input in car_val]
-            correct_labels = [x[-1] for x in car_val]
+            predictions = [model.predict(input, list(attributes.keys())) for input in val]
+            correct_labels = [x[-1] for x in val]
             num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
-            car_test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(car_val)))
+            test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
     
     measure_averages = {
         entropy.__name__: [],
@@ -235,27 +235,178 @@ def run_hw1_car():
     }
     print("== Car training data statistics")
     print("Depth & Measure & \# Correct & Accuracy")
-    for (depth, measure, correct, accuracy) in car_train_results:
-        measure_averages[measure].append(len(car_data) - correct)
-        print(f"{depth} & {measure} & {correct} & {accuracy}")
+    for (depth, measure, correct, accuracy) in train_results:
+        measure_averages[measure].append(len(S) - correct)
+        print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
 
-    print("Average errors per measure function")
+    print("\nAverage errors per measure function")
+    print("Measure & Average Errors")
     for measure,incorrect in measure_averages.items():
-        print(f"{measure} & {sum(incorrect) / len(incorrect)}")
+        print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
         measure_averages[measure] = []
     
     print()
 
     print("== Car test data statistics")
     print("Depth & Measure & \# Correct & Accuracy")
-    for (depth, measure, correct, accuracy) in car_test_results:
-        measure_averages[measure].append(len(car_data) - correct)
-        print(f"{depth} & {measure} & {correct} & {accuracy}")
+    for (depth, measure, correct, accuracy) in test_results:
+        measure_averages[measure].append(len(S) - correct)
+        print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
 
-    print("Average errors per measure function")
+    print("\nAverage errors per measure function")
+    print("Measure & Average Errors")
     for measure,incorrect in measure_averages.items():
-        print(f"{measure} & {sum(incorrect) / len(incorrect)}")
+        print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
         measure_averages[measure] = []
+
+def preprocess_bank_data(refill_unknown=False):
+    S = []
+
+    with open("./datasets/bank/train.csv") as file:
+        for line in file:
+            S.append(tuple(line.strip().split(',')))
+
+    val = []
+    with open("./datasets/bank/test.csv") as file:
+        for line in file:
+            val.append(tuple(line.strip().split(',')))
+
+    # For numeric attributes, 1 = above median, 0 = below median
+    attributes = {
+        "age": ["0", "1"],
+        "job": ["admin.", "unknown", "unemployed", "management", "housemaid", "entrepreneur",
+                "student", "blue-collar", "self-employed", "retired", "technician", "services"],
+        "marital": ["married", "divorced", "single"],
+        "education": ["unknown", "secondary", "primary", "tertiary"],
+        "default": ["yes", "no"],
+        "balance": ["0", "1"],
+        "housing": ["yes", "no"],
+        "loan": ["yes", "no"],
+        "contact": ["unknown", "telephone", "cellular"],
+        "day": ["0", "1"],
+        "month": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
+        "duration": ["0", "1"],
+        "campaign": ["0", "1"],
+        "pdays": ["-1", "0", "1"],
+        "previous": ["0", "1"],
+        "poutcome": ["unknown", "other", "failure", "success"]
+    }
+    labels = ["yes", "no"]
+
+    # preprocessing:
+    # Compute median for age, balance, day, duration, campaign, pdays, previous
+    attr = list(attributes.keys())
+    numeric_features = ["age", "balance", "day", "duration", "campaign", "pdays", "previous"]
+    media = []
+    for feature in numeric_features:
+        # exclude rows where pdays = -1 from pdays median
+        if feature == "pdays":
+            media.append(np.median([float(x[-4]) for x in S if x[-4] != "-1"]))
+        else:
+            media.append(np.median([float(x[attr.index(feature)]) for x in S]))
+
+    # Replace numeric features with 1 or 0 if above or below median (or -1 if pdays)
+    for index,example in enumerate(S):
+        example = list(example)
+        for media_index,feature in enumerate(numeric_features):
+            feature_index = attr.index(feature)
+            if not (feature == "pdays" and example[-4] == "-1"):
+                example[feature_index] = "1" if float(example[feature_index]) > media[media_index] else "0"
+        S[index] = tuple(example)
+
+    for index,example in enumerate(val):
+        example = list(example)
+        for media_index,feature in enumerate(numeric_features):
+            feature_index = attr.index(feature)
+            if not (feature == "pdays" and example[-4] == "-1"):
+                example[feature_index] = "1" if float(example[feature_index]) > media[media_index] else "0"
+        val[index] = tuple(example)
+
+    # If treating "unknown" as a value, return here
+    if not refill_unknown:
+        return S, val, attributes, labels
+
+    # Determine most common label for these features
+    unknown_features = ["job", "education", "contact", "poutcome"]
+    common_labels = []
+    for feature in unknown_features:
+        uniq_labels, count = np.unique([x[attr.index(feature)] for x in S if x[attr.index(feature)] != "unknown"], return_counts=True)
+        common_labels.append(uniq_labels[np.argmax(count)])
+    
+    # For each example, replace each unknown feature with the most common label for that feature
+    for index,example in enumerate(S):
+        example = list(example)
+        for label_index,feature in enumerate(unknown_features):
+            feature_index = attr.index(feature)
+            example[feature_index] = common_labels[label_index]
+        S[index] = tuple(example)
+
+    for index,example in enumerate(val):
+        example = list(example)
+        for label_index,feature in enumerate(unknown_features):
+            feature_index = attr.index(feature)
+            example[feature_index] = common_labels[label_index]
+        val[index] = tuple(example)
+    
+    return S, val, attributes, labels
+
+def run_hw1_bank():
+    for b in [False, True]: # lmao boolean for loop
+        print(f"\nRefilling unknown? {b}\n")
+        S, val, attributes, labels = preprocess_bank_data(refill_unknown=b)
+        
+        train_results = []
+        test_results = []
+        for depth in range(6):
+            depth = depth + 1
+            model = ID3()
+            for measure in [entropy, majority_error, gini_index]:
+                # Train model with set depth and measure
+                model.train(S, attributes, labels, measure, max_depth=depth)
+
+                # Predict on training set
+                predictions = [model.predict(input, list(attributes.keys())) for input in S]
+                correct_labels = [x[-1] for x in S]
+                num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
+                train_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(S)))
+
+                # Predict on test set
+                predictions = [model.predict(input, list(attributes.keys())) for input in val]
+                correct_labels = [x[-1] for x in val]
+                num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
+                test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
+        
+        measure_averages = {
+            entropy.__name__: [],
+            majority_error.__name__: [],
+            gini_index.__name__: []
+        }
+        print("== Bank training data statistics")
+        print("Depth & Measure & \# Correct & Accuracy")
+        for (depth, measure, correct, accuracy) in train_results:
+            measure_averages[measure].append(len(S) - correct)
+            print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
+
+        print("\n==Average errors per measure function")
+        print("Measure & Average Errors")
+        for measure,incorrect in measure_averages.items():
+            print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
+            measure_averages[measure] = []
+        
+        print()
+
+        print("== Bank test data statistics")
+        print("Depth & Measure & \# Correct & Accuracy")
+        for (depth, measure, correct, accuracy) in test_results:
+            measure_averages[measure].append(len(S) - correct)
+            print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
+
+        print("\n==Average errors per measure function")
+        print("Measure & Average Errors")
+        for measure,incorrect in measure_averages.items():
+            print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
+            measure_averages[measure] = []
+    
 
 if __name__ == "__main__":
     """ When run from CLI, just dump data necessary to do hw1 """
@@ -263,5 +414,11 @@ if __name__ == "__main__":
     # for measure in [entropy, majority_error, gini_index]:
     #     run_debug_datasets(measure)
     #     print("==")
-
+    
+    print("========== CAR DATA ==========")
     run_hw1_car()
+    
+    print()
+
+    print("========== BANK DATA ==========")
+    run_hw1_bank()
