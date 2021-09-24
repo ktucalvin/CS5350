@@ -185,6 +185,42 @@ def run_debug_datasets(measure=entropy):
     # run_simple("tennis", tennis_attributes, tennis_labels, measure)
     run_simple("car", car_attributes, car_labels, measure, max_depth=6)
 
+def print_results(S, train_results, test_results, dataset):
+    # Sort by measure function, then by depth
+    train_results = sorted(train_results, key = lambda x: (x[1], x[0]))
+    test_results = sorted(test_results, key = lambda x: (x[1], x[0]))
+
+    measure_averages = {
+        entropy.__name__: [],
+        majority_error.__name__: [],
+        gini_index.__name__: []
+    }
+    print(f"== {dataset} training data statistics")
+    print("Measure & Depth & \# Correct & \# Incorrect & Accuracy")
+    for (depth, measure, correct, accuracy) in train_results:
+        measure_averages[measure].append(len(S) - correct)
+        print(f"{measure} & {depth} & {correct} & {len(S) - correct} & {accuracy :.3f} \\\\")
+
+    print("\nAverage errors per measure function")
+    print("Measure & Average Errors")
+    for measure,incorrect in measure_averages.items():
+        print(f"{measure} & {sum(incorrect) / len(incorrect) :.3f} \\\\")
+        measure_averages[measure] = []
+    
+    print()
+
+    print(f"== {dataset} test data statistics")
+    print("Measure & Depth & \# Correct & \# Incorrect & Accuracy")
+    for (depth, measure, correct, accuracy) in test_results:
+        measure_averages[measure].append(len(S) - correct)
+        print(f"{measure} & {depth} & {correct} & {len(S) - correct} & {accuracy :.3f} \\\\")
+
+    print("\nAverage errors per measure function")
+    print("Measure & Average Errors")
+    for measure,incorrect in measure_averages.items():
+        print(f"{measure} & {sum(incorrect) / len(incorrect) :.3f} \\\\")
+        measure_averages[measure] = []
+
 def run_hw1_car():
     S = []
 
@@ -228,36 +264,7 @@ def run_hw1_car():
             num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
             test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
     
-    measure_averages = {
-        entropy.__name__: [],
-        majority_error.__name__: [],
-        gini_index.__name__: []
-    }
-    print("== Car training data statistics")
-    print("Depth & Measure & \# Correct & Accuracy")
-    for (depth, measure, correct, accuracy) in train_results:
-        measure_averages[measure].append(len(S) - correct)
-        print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
-
-    print("\nAverage errors per measure function")
-    print("Measure & Average Errors")
-    for measure,incorrect in measure_averages.items():
-        print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
-        measure_averages[measure] = []
-    
-    print()
-
-    print("== Car test data statistics")
-    print("Depth & Measure & \# Correct & Accuracy")
-    for (depth, measure, correct, accuracy) in test_results:
-        measure_averages[measure].append(len(S) - correct)
-        print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
-
-    print("\nAverage errors per measure function")
-    print("Measure & Average Errors")
-    for measure,incorrect in measure_averages.items():
-        print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
-        measure_averages[measure] = []
+    print_results(S, train_results, test_results, "Car")
 
 def preprocess_bank_data(refill_unknown=False):
     S = []
@@ -357,7 +364,7 @@ def run_hw1_bank():
         
         train_results = []
         test_results = []
-        for depth in range(6):
+        for depth in range(16):
             depth = depth + 1
             model = ID3()
             for measure in [entropy, majority_error, gini_index]:
@@ -376,36 +383,7 @@ def run_hw1_bank():
                 num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
                 test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
         
-        measure_averages = {
-            entropy.__name__: [],
-            majority_error.__name__: [],
-            gini_index.__name__: []
-        }
-        print("== Bank training data statistics")
-        print("Depth & Measure & \# Correct & Accuracy")
-        for (depth, measure, correct, accuracy) in train_results:
-            measure_averages[measure].append(len(S) - correct)
-            print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
-
-        print("\n==Average errors per measure function")
-        print("Measure & Average Errors")
-        for measure,incorrect in measure_averages.items():
-            print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
-            measure_averages[measure] = []
-        
-        print()
-
-        print("== Bank test data statistics")
-        print("Depth & Measure & \# Correct & Accuracy")
-        for (depth, measure, correct, accuracy) in test_results:
-            measure_averages[measure].append(len(S) - correct)
-            print(f"{depth} & {measure} & {correct} & {accuracy} \\\\")
-
-        print("\n==Average errors per measure function")
-        print("Measure & Average Errors")
-        for measure,incorrect in measure_averages.items():
-            print(f"{measure} & {sum(incorrect) / len(incorrect)} \\\\")
-            measure_averages[measure] = []
+        print_results(S, train_results, test_results, "Bank")
     
 
 if __name__ == "__main__":
