@@ -1,29 +1,37 @@
 import copy
 import numpy as np
 
-def entropy(S, labels):
+def entropy(S, labels, attr, value):
     # - sum_i^K p_i log_2(p_i)
     sum = 0
+    str = []
     for lab in labels:
         examples = [example for example in S if example[-1] == lab]
         if len(S) and len(examples):
             p_i = len(examples) / len(S)
             sum += p_i * np.log2(p_i)
+            str.append(f"{len(examples)}/{len(S)}\\log({len(examples)}/{len(S)})")
+
+    if value:
+        print(f"H_{{{attr}={value}}} = -{' - '.join(str)} = {-sum :.3f}")
+    else:
+        print(f"H_{attr} = -{' - '.join(str)} = {-sum :.3f}")
     return -sum
 
 
-def majority_error(S, labels):
+def majority_error(S, labels, attr, value):
     if len(S) == 0:
         return 0
     # determine majority label
     example_labels = [x[-1] for x in S]
     uniq_labels, count = np.unique(example_labels, return_counts=True)
     maj_label = uniq_labels[np.argmax(count)]
+    # print(f"majority label for {attr}={value}: {maj_label}")
     # return count(minority labels) / count(labels)
     return np.sum(np.array(example_labels) != np.array([maj_label])) / len(S)
 
 
-def gini_index(S, labels):
+def gini_index(S, labels, attr, value):
     sum = 0
     for lab in labels:
         examples = [example for example in S if example[-1] == lab]
@@ -31,6 +39,7 @@ def gini_index(S, labels):
             p_i = len(examples) / len(S)
             sum += p_i ** 2
     # return 1 - sum_1^K p_k^2
+    print(f"gini({S}): {sum}")
     return 1 - sum
 
 
@@ -42,13 +51,19 @@ class ID3:
         uniq_labels, count = np.unique([x[-1] for x in S], return_counts=True)
         return uniq_labels[np.argmax(count)]
 
-    def gain(self, S, values, measure, labels, index):
+    def gain(self, S, values, measure, labels, index, attr):
         # measure(S) - sum_{v in values(A)} (len(S_v) / len(S) measure(S_v))
         sum = 0
+        str = []
         for v in values:
             S_v = [example for example in S if example[index] == v]
-            sum += len(S_v) / len(S) * measure(S_v, labels)
-        return measure(S, labels) - sum
+            m = measure(S_v, labels, attr, v)
+            sum += len(S_v) / len(S) * m
+            str.append(f"{len(S_v)}/{len(S)} * {m :.3f}")
+        
+        full_measure = measure(S, labels, "S", None)
+        print(f"Gain(S, {attr}) = {full_measure :.3f} - ({' + '.join(str)}) = {full_measure - sum :.3f}")
+        return full_measure - sum
 
     def train(self, S, attributes, labels, measure=entropy, max_depth=float("inf")):
         self.tree = self.trainR(S, attributes, list(
@@ -70,10 +85,15 @@ class ID3:
         root = {}
         # A = attribute in attributes that best splits S
         attr = list(attributes.keys())
-        gains = [self.gain(S, attributes[a], measure, labels,
-                           attr.index(a)) for a in attr]
+        gains = []
+        # print(f"S = {S}")
+        print(f"attributes: {attr}")
+        for index,a in enumerate(attr):
+            gain = self.gain(S, attributes[a], measure, labels, index, a)
+            gains.append(gain)
         A = attr[np.argmax(gains)]
         indexA = order.index(A)
+        print(f"Split on {A}\n")
 
         # record in the tree which attribute we split on, for later traversal
         root[A] = {}
@@ -393,10 +413,33 @@ if __name__ == "__main__":
     #     run_debug_datasets(measure)
     #     print("==")
     
-    print("========== CAR DATA ==========")
-    run_hw1_car()
+    # Part 2
+    # print("========== CAR DATA ==========")
+    # run_hw1_car()
     
-    print()
+    # print()
 
-    print("========== BANK DATA ==========")
-    run_hw1_bank()
+    # print("========== BANK DATA ==========")
+    # run_hw1_bank()
+
+    # Q1
+    # attributes = {
+    #     "x_1": ["0", "1"],
+    #     "x_2": ["0", "1"],
+    #     "x_3": ["0", "1"],
+    #     "x_4": ["0", "1"]
+    # }
+    # labels = ["0", "1"]
+    # run_simple("q1", attributes, labels, verbose=True)
+
+    # Q2
+    tennis_attributes = {
+        "outlook": ["sunny", "overcast", "rainy"],
+        "temperature": ["hot", "medium", "cool"],
+        "humidity": ["high", "normal", "low"],
+        "wind": ["strong", "weak"]
+    }
+    tennis_labels = ["0", "1"]
+    # run_simple("tennis", tennis_attributes, tennis_labels, measure=entropy, verbose=True)
+    # run_simple("tennis", tennis_attributes, tennis_labels, measure=gini_index, verbose=True)
+    run_simple("tennis", tennis_attributes, tennis_labels, measure=majority_error, verbose=True)
