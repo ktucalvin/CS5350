@@ -50,11 +50,19 @@ class ID3:
             sum += len(S_v) / len(S) * measure(S_v, labels)
         return measure(S, labels) - sum
 
-    def train(self, S, attributes, labels, measure=entropy, max_depth=float("inf")):
-        self.tree = self.trainR(S, attributes, list(
-            attributes.keys()), labels, measure, max_depth)
+    # TODO: add support for weights
+    def train(self, S, attributes, labels, weights=None, measure=entropy, max_depth=float("inf")):
+        self.order = [None] + list(attributes.keys())
+        # self.order = list(attributes.keys())
+        if not weights:
+            weights = np.ones(len(S))
+        # attach weights to each example
+        weightedS = []
+        for index,weight in enumerate(weights):
+            weightedS.append( (weight,) + S[index])
+        self.tree = self.trainR(weightedS, attributes, labels, measure, max_depth)
 
-    def trainR(self, S, attributes, order, labels, measure, max_depth, depth=0):
+    def trainR(self, S, attributes, labels, measure, max_depth, depth=0):
         """Internal recursive training function"""
         # if all examples have same label
         #   return a leaf node with that label
@@ -71,9 +79,9 @@ class ID3:
         # A = attribute in attributes that best splits S
         attr = list(attributes.keys())
         gains = [self.gain(S, attributes[a], measure, labels,
-                           attr.index(a)) for a in attr]
+                           self.order.index(a)) for a in attr]
         A = attr[np.argmax(gains)]
-        indexA = order.index(A)
+        indexA = self.order.index(A)
 
         # record in the tree which attribute we split on, for later traversal
         root[A] = {}
@@ -93,12 +101,12 @@ class ID3:
             else:
                 newattr = copy.deepcopy(attributes)
                 del newattr[A]
-                root[A][v] = self.trainR(S_v, newattr, order, labels, measure, depth=(
+                root[A][v] = self.trainR(S_v, newattr, labels, measure, depth=(
                     depth + 1), max_depth=max_depth)
         # return root node
         return root
 
-    def predict(self, input, order):
+    def predict(self, input):
         """
             Predict label given input tuple
             input -- input tuple
@@ -109,11 +117,12 @@ class ID3:
         # traversal ends when we reach something that is not a dict
 
         subtree = self.tree
-        i = 0
-        while isinstance(subtree, dict) and i < len(order):
+        # i = 1
+        # while isinstance(subtree, dict) and i < len(self.order):
+        while isinstance(subtree, dict):
             attr = list(subtree.keys())[0]
-            subtree = subtree[attr][input[order.index(attr)]]
-            i += 1
+            subtree = subtree[attr][input[self.order.index(attr) - 1]]
+            # i += 1
 
         return subtree
 
@@ -132,15 +141,13 @@ def run_simple(dataset, attributes, labels, measure=entropy, verbose=False, max_
         for line in file:
             val.append(tuple(line.strip().split(',')))
 
-    model.train(S, attributes, labels, measure, max_depth=max_depth)
+    model.train(S, attributes, labels, None, measure, max_depth=max_depth)
 
-    predictions = [model.predict(
-        input, list(attributes.keys())) for input in S]
+    predictions = [model.predict(input) for input in S]
     correct_labels = [x[-1] for x in S]
     correct_train = np.sum(np.array(predictions) == np.array(correct_labels))
 
-    predictions = [model.predict(input, list(
-        attributes.keys())) for input in val]
+    predictions = [model.predict(input) for input in val]
     correct_labels = [x[-1] for x in val]
     correct_test = np.sum(np.array(predictions) == np.array(correct_labels))
 
@@ -250,16 +257,16 @@ def run_hw1_car():
         model = ID3()
         for measure in [entropy, majority_error, gini_index]:
             # Train model with set depth and measure
-            model.train(S, attributes, labels, measure, max_depth=depth)
+            model.train(S, attributes, labels, None, measure, max_depth=depth)
 
             # Predict on training set
-            predictions = [model.predict(input, list(attributes.keys())) for input in S]
+            predictions = [model.predict(input) for input in S]
             correct_labels = [x[-1] for x in S]
             num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
             train_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(S)))
 
             # Predict on test set
-            predictions = [model.predict(input, list(attributes.keys())) for input in val]
+            predictions = [model.predict(input) for input in val]
             correct_labels = [x[-1] for x in val]
             num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
             test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
@@ -369,16 +376,16 @@ def run_hw1_bank():
             model = ID3()
             for measure in [entropy, majority_error, gini_index]:
                 # Train model with set depth and measure
-                model.train(S, attributes, labels, measure, max_depth=depth)
+                model.train(S, attributes, labels, None, measure, max_depth=depth)
 
                 # Predict on training set
-                predictions = [model.predict(input, list(attributes.keys())) for input in S]
+                predictions = [model.predict(input) for input in S]
                 correct_labels = [x[-1] for x in S]
                 num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
                 train_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(S)))
 
                 # Predict on test set
-                predictions = [model.predict(input, list(attributes.keys())) for input in val]
+                predictions = [model.predict(input) for input in val]
                 correct_labels = [x[-1] for x in val]
                 num_correct = np.sum(np.array(predictions) == np.array(correct_labels))
                 test_results.append((depth, measure.__name__, num_correct, float(num_correct) / len(val)))
@@ -389,14 +396,14 @@ def run_hw1_bank():
 if __name__ == "__main__":
     """ When run from CLI, just dump data necessary to do hw1 """
 
-    # for measure in [entropy, majority_error, gini_index]:
-    #     run_debug_datasets(measure)
-    #     print("==")
+    for measure in [entropy, majority_error, gini_index]:
+        run_debug_datasets(measure)
+        print("==")
     
     print("========== CAR DATA ==========")
     run_hw1_car()
     
-    print()
+    # print()
 
-    print("========== BANK DATA ==========")
-    run_hw1_bank()
+    # print("========== BANK DATA ==========")
+    # run_hw1_bank()
