@@ -6,6 +6,7 @@ Basic usage:
 
 ```python
 import id3
+from id3 import ID3
 
 # an example from the raw csv:
 # high,med,5more,4,small,low,unacc
