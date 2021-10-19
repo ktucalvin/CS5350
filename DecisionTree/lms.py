@@ -1,13 +1,6 @@
 import datasets
 import numpy as np
 
-# :NOTE: should use hw2 part 1 q5 as debug dataset
-
-def sgn(num):
-    if num > 0:
-        return 1
-    return -1
-
 class BatchGradientDescentClassifier():
     def __init__(self, learning_rate):
         self.learning_rate = learning_rate
@@ -20,15 +13,16 @@ class BatchGradientDescentClassifier():
         # For t = 0, 1, 2, ... (until convergence)
         while norm > threshold:
             # Compute gradient of J(w) at (w), call it grad
-            # count errors through all examples, then scale each x_i by errors and sum
+            # error is PER ROW
+            # grad = weighted sum of each example, where weights are each row's error
 
-            err = np.sum(Y - self.w.dot(X.T))
+            err = Y - self.w.dot(X.T)
             grad = np.ravel(np.sum(-err * X, axis=0))
 
             # Update w_{t+1} = w_t - r*grad
-            wnext = np.ravel(self.w - self.learning_rate*grad)
+            wnext = self.w - self.learning_rate*grad
             norm = np.linalg.norm(wnext - self.w)
-            self.w = wnext
+            self.w = np.ravel(wnext)
     
     def predict(self, input):
         return self.w @ input
@@ -50,13 +44,14 @@ def StochasticGradientDescentClassifier():
         pass
 
 if __name__ == "__main__":
-    Xtrain, Ytrain, Xtest, Ytest, attributes = datasets.get_concrete_data()
+    # Xtrain, Ytrain, Xtest, Ytest, attributes = datasets.get_concrete_data()
+    Xtrain, Ytrain, Xtest, Ytest, attributes = datasets.get_hw2_data()
 
-    bgd = BatchGradientDescentClassifier(2 ** -8)
-    bgd.train(np.matrix(Xtrain), Ytrain, threshold=1e-12)
+    bgd = BatchGradientDescentClassifier(2 ** -4)
+    bgd.train(np.matrix(Xtrain), np.array(Ytrain), threshold=1e-6)
 
     predictions = [bgd.predict(input) for input in Xtest]
-    incorrect = np.sum(np.array(predictions) != np.array(Ytest))
+    incorrect = len(Ytest) - np.sum(np.isclose(np.array(predictions), np.array(Ytest), atol=1e-6))
     print(f"incorrect: {incorrect}")
     print(predictions)
     print(Ytest)

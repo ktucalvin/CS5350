@@ -1,5 +1,34 @@
 import numpy as np
 
+def get_lms_data(dataset):
+    """Prepares dataset where all values are numeric. Also appends a leading 1 to account for bias term."""
+    Xtrain = []
+    Ytrain = []
+    with open(f"./datasets/{dataset}/train.csv") as file:
+        for line in file:
+            example = [1] + list(map(float, line.strip().split(',')))
+            Xtrain.append(tuple(example[:-1]))
+            Ytrain.append(example[-1])
+    
+    Xtest = []
+    Ytest = []
+    with open(f"./datasets/{dataset}/test.csv") as file:
+        for line in file:
+            example = [1] + list(map(float, line.strip().split(',')))
+            Xtest.append(tuple(example[:-1]))
+            Ytest.append(example[-1])
+    
+    return Xtrain, Ytrain, Xtest, Ytest
+def get_hw2_data():
+    attributes = [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+    ]
+    
+    return get_lms_data("hw2") + (attributes,)
+
 def get_concrete_data():
     attributes = [
         "Cement",
@@ -11,25 +40,8 @@ def get_concrete_data():
         "Fine Aggr",
         "SLUMP"
     ]
-
-    Xtrain = []
-    Ytrain = []
-    with open("./datasets/concrete/train.csv") as file:
-        for line in file:
-            example = list(map(float, line.strip().split(',')))
-            Xtrain.append(tuple(example[:-1]))
-            Ytrain.append(example[-1])
     
-    Xtest = []
-    Ytest = []
-    with open("./datasets/concrete/test.csv") as file:
-        for line in file:
-            example = list(map(float, line.strip().split(',')))
-            print(example)
-            Xtest.append(tuple(example[:-1]))
-            Ytest.append(example[-1])
-    
-    return Xtrain, Ytrain, Xtest, Ytest, attributes
+    return get_lms_data("concrete") + (attributes,)
 
 def preprocess_bank_data(refill_unknown=False, numeric_labels=False):
     S = []
