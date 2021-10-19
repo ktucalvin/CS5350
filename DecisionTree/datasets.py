@@ -1,8 +1,38 @@
 import numpy as np
 
+def get_concrete_data():
+    attributes = [
+        "Cement",
+        "Slag",
+        "Fly ash",
+        "Water",
+        "SP",
+        "Coarse Aggr",
+        "Fine Aggr",
+        "SLUMP"
+    ]
+
+    Xtrain = []
+    Ytrain = []
+    with open("./datasets/concrete/train.csv") as file:
+        for line in file:
+            example = list(map(float, line.strip().split(',')))
+            Xtrain.append(tuple(example[:-1]))
+            Ytrain.append(example[-1])
+    
+    Xtest = []
+    Ytest = []
+    with open("./datasets/concrete/test.csv") as file:
+        for line in file:
+            example = list(map(float, line.strip().split(',')))
+            print(example)
+            Xtest.append(tuple(example[:-1]))
+            Ytest.append(example[-1])
+    
+    return Xtrain, Ytrain, Xtest, Ytest, attributes
+
 def preprocess_bank_data(refill_unknown=False, numeric_labels=False):
     S = []
-
     with open("./datasets/bank/train.csv") as file:
         for line in file:
             S.append(tuple(line.strip().split(',')))
