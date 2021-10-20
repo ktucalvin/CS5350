@@ -76,6 +76,9 @@ def preprocess_bank_data(refill_unknown=False, numeric_labels=False):
     }
     labels = ["yes", "no"]
 
+    if numeric_labels:
+        labels = [1, -1]
+
     # preprocessing:
     # Compute median for age, balance, day, duration, campaign, pdays, previous
     attr = list(attributes.keys())

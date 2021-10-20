@@ -7,7 +7,7 @@ def entropy(S, labels):
     total = 0
     for lab in labels:
         examples = [example[0] for example in S if example[-1] == lab]
-        if len(S) and len(examples):
+        if sum(weightedS) and sum(examples):
             p_i = sum(examples) / sum(weightedS)
             total += p_i * np.log2(p_i)
     return -total
@@ -51,8 +51,9 @@ class ID3:
         total = 0
         for v in values:
             S_v = [example for example in S if example[index] == v]
+            weightedS = [ex[0] for ex in S]
             weightedSv = [ex[0] for ex in S_v]
-            total += sum(weightedSv) / len(S) * measure(S_v, labels)
+            total += sum(weightedSv) / sum(weightedS) * measure(S_v, labels)
         return measure(S, labels) - total
 
     def train(self, S, attributes, labels, weights=None, measure=entropy, max_depth=float("inf")):
@@ -121,12 +122,9 @@ class ID3:
         # traversal ends when we reach something that is not a dict
 
         subtree = self.tree
-        # i = 1
-        # while isinstance(subtree, dict) and i < len(self.order):
         while isinstance(subtree, dict):
             attr = list(subtree.keys())[0]
             subtree = subtree[attr][input[self.order.index(attr) - 1]]
-            # i += 1
 
         return subtree
 

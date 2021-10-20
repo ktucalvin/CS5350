@@ -44,30 +44,29 @@ def compute_bagged_error(S, val, bag):
 
 if __name__ == "__main__":
     S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
-    # with open("bag-results.txt", "a", encoding="utf8") as log:
-    #     m = len(S)
-    #     T = 500
+    with open("bag-results.txt", "a", encoding="utf8") as log:
+        m = len(S)
+        T = 500
 
-    #     bag = []
-    #     for t in range(1, T+1):
-    #         # for t = 1,2,...,T
-    #         # can put another nested loop here if we want `t` new trees for each bagged model
-    #         # instead of just adding one more tree each time
+        bag = []
+        for t in range(1, T+1):
+            # for t = 1,2,...,T
+            # can put another nested loop here if we want `t` new trees for each bagged model
+            # instead of just adding one more tree each time
 
-    #         # draw m' <= m samples uniformly with replacement
-    #         mprime = np.random.randint(1, m + 1)
-    #         indices = np.random.choice(len(S), mprime)
-    #         samples = [S[i] for i in indices]
+            # draw m' <= m samples uniformly with replacement
+            indices = np.random.choice(len(S), m)
+            samples = [S[i] for i in indices]
 
-    #         # train a classifier c_t
-    #         model = ID3()
-    #         model.train(samples, attributes, labels)
-    #         bag.append(model)
+            # train a classifier c_t
+            model = ID3()
+            model.train(samples, attributes, labels)
+            bag.append(model)
 
-    #         # construct final classifier by taking votes from all c_t
-    #         train_err, test_err = compute_bagged_error(S, val, bag)
-    #         print(f"{t}\t{train_err}\t{test_err}")
-    #         log.write(f"{t}\t{train_err}\t{test_err}\n")
+            # construct final classifier by taking votes from all c_t
+            train_err, test_err = compute_bagged_error(S, val, bag)
+            print(f"{t}\t{train_err}\t{test_err}")
+            log.write(f"{t}\t{train_err}\t{test_err}\n")
     
     # part 2, q2c
     with open("bias-variance-bags-results.txt", "a", encoding="utf8") as log:
@@ -85,8 +84,7 @@ if __name__ == "__main__":
             # learn bagged predictor w/ 500 (or 100 if time constrained) trees
             for ti in range(500):
                 # draw m' <= m samples uniformly with replacement
-                mprime = np.random.randint(1, len(samples) + 1)
-                indices = np.random.choice(len(samples), mprime)
+                indices = np.random.choice(len(samples), m)
                 subsamples = [samples[i] for i in indices]
 
                 model = ID3()
