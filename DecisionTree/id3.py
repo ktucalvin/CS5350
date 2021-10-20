@@ -13,6 +13,7 @@ def entropy(S, labels):
     return -total
 
 
+# :NOTE: does not use fractional weights
 def majority_error(S, labels):
     if len(S) == 0:
         return 0
@@ -27,6 +28,7 @@ def majority_error(S, labels):
     return sum(mismatchedWeights) / sum([example[0] for example in S])
 
 
+# :NOTE: does not use fractional weights
 def gini_index(S, labels):
     total = 0
     for lab in labels:
@@ -43,8 +45,16 @@ class ID3:
         self.tree = {}
 
     def most_common_label(self, S):
-        uniq_labels, count = np.unique([x[-1] for x in S], return_counts=True)
-        return uniq_labels[np.argmax(count)]
+        # must use FRACTIONAL counts
+        counts = {}
+        for example in S:
+            label = example[-1]
+            if label not in counts:
+                counts[label] = example[0]
+            else:
+                counts[label] += example[0]
+        return max(counts, key=counts.get)
+        
 
     def gain(self, S, values, measure, labels, index):
         # measure(S) - sum_{v in values(A)} (len(S_v) / len(S) measure(S_v))

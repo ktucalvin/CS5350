@@ -1,0 +1,12 @@
+black,triangle,+
+black,square,+
+black,circle,+
+white,triangle,-
+white,square,-
+white,circle,-
+white,triangle,+
+black,triangle,+
+white,square,+
+black,square,+
+white,circle,-
+black,circle,-

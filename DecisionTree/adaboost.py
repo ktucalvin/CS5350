@@ -2,6 +2,7 @@ import datasets
 import id3
 from id3 import ID3
 import numpy as np
+import math
 
 def compute_error(S, val, model, D):
     """
@@ -58,53 +59,40 @@ def ensemble_predict(ensemble, input):
 
 if __name__ == "__main__":
     S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
-    S = S[:100]
     Y = np.array([example[-1] for example in S])
+    with open("adaboost-results.txt", "a", encoding="utf8") as log:
+        # initialize D_1(i) = 1/m for i = 1,2,...,m
+        m =  len(S)
+        D = np.ones(m) / m
+        T = 500
+        h = [] # ensemble is list of tuples of (weight, classifier)
 
-    # initialize D_1(i) = 1/m for i = 1,2,...,m
-    m =  len(S)
-    D = np.ones(m) / m
-    T = 500
-    h = [] # ensemble is list of tuples of (weight, classifier)
+        # for t = 1,2,...,T:
+        for t in range(1, T+1):
+            # Find a classifier h_t whose weighted classification error is better than chance
 
-    # print(f"(t, \\epsilon_t ?, training accuracy, test accuracy)")
+            model = ID3()
+            model.train(S, attributes, labels, weights=D, max_depth=1, measure=id3.entropy)
 
-    # for t = 1,2,...,T:
-    for t in range(1, T+1):
-        # print(f"D = {D[:10]}")
-        # Find a classifier h_t whose weighted classification error is better than chance
+            # epsilon_t = error of hypothesis on training data
+            eps_t, train_err, test_err, predictions = compute_error(S, val, model, D)
 
-        # what SHOULD happen:
-        # first tree learns to always return -1, OK fine
-        # those examples end up weighted LESS and examples with +1 label weighted MORE
-        # this continues happening until adaboosted
+            # compute its vote as alpha_t = 1/2 * ln(1-epsilon_t / epsilon_t)
+            alpha_t = 0.5 * np.log((1 - eps_t) / eps_t)
 
-        # what happens:
-        # eps_t = 0.5
-        # nothing gets re-weighted anymore, entire algorithm gets stuck
+            # d_{t+1}(i) = D_t(i) / Z_t * exp(-alpha_t * y_i h_t(x_i))
+            Dnext = D * np.exp(-alpha_t * Y * predictions)
+            Dnext /= sum(Dnext)
+            # Update the values of the weights for the training example
+            D = Dnext
 
-        # print(D)
+            print(f"stump{t}\t\t{train_err}\t{test_err}\t{eps_t}")
+            log.write(f"stump{t}\t\t{train_err}\t{test_err}\t{eps_t}\n")
 
-        model = ID3()
-        model.train(S, attributes, labels, weights=D, max_depth=1, measure=id3.entropy)
+            h.append((alpha_t, model))
+            train_err, test_err = compute_ensemble_error(S, val, h)
+            print(f"ensemble{t}\t{train_err}\t{test_err}")
+            log.write(f"ensemble{t}\t{train_err}\t{test_err}\n")
 
-        # epsilon_t = error of hypothesis on training data
-        eps_t, train_acc, test_acc, predictions = compute_error(S, val, model, D)
-
-        # compute its vote as alpha_t = 1/2 * ln(1-epsilon_t / epsilon_t)
-        alpha_t = 0.5 * np.log((1 - eps_t) / eps_t)
-
-        # d_{t+1}(i) = D_t(i) / Z_t * exp(-alpha_t * y_i h_t(x_i))
-        Dnext = D * np.exp(-alpha_t * Y * predictions)
-        Dnext /= sum(Dnext)
-        # Update the values of the weights for the training example
-        D = Dnext
-
-        print(f"stump{t}\t\t{train_acc}\t{test_acc}\t{eps_t}")
-
-        h.append((alpha_t, model))
-        train_acc, test_acc = compute_ensemble_error(S, val, h)
-        print(f"ensemble{t}\t{train_acc}\t{test_acc}")
-
-    # return the final hypothesis H_final(x) = sgn(sum_t alpha_t h_t(x))
-    # ^ would need to refactor above into adaboost class with train/predict
+        # return the final hypothesis H_final(x) = sgn(sum_t alpha_t h_t(x))
+        # ^ would need to refactor above into adaboost class with train/predict
