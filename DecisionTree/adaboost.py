@@ -58,9 +58,10 @@ def ensemble_predict(ensemble, input):
 
 
 if __name__ == "__main__":
-    S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
+    # S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
+    S, val, attributes, labels = datasets.get_credit_data()
     Y = np.array([example[-1] for example in S])
-    with open("adaboost-results.txt", "a", encoding="utf8") as log:
+    with open("credit-adaboost-results.txt", "a", encoding="utf8") as log:
         # initialize D_1(i) = 1/m for i = 1,2,...,m
         m =  len(S)
         D = np.ones(m) / m

@@ -43,13 +43,13 @@ def compute_bagged_error(S, val, bag):
     return train_err, test_err
 
 if __name__ == "__main__":
-    S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
-    with open("bag-results.txt", "a", encoding="utf8") as log:
+    S, val, attributes, labels = datasets.get_credit_data()
+    with open("REVERSE-credit-bag-results.txt", "a", encoding="utf8") as log:
         m = len(S)
         T = 500
 
         bag = []
-        for t in range(1, T+1):
+        for t in reversed(range(442, T+1)):
             # for t = 1,2,...,T
             # can put another nested loop here if we want `t` new trees for each bagged model
             # instead of just adding one more tree each time
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             train_err, test_err = compute_bagged_error(S, val, bag)
             print(f"{t}\t{train_err}\t{test_err}")
             log.write(f"{t}\t{train_err}\t{test_err}\n")
-    
+    exit()
     # part 2, q2c
     with open("bias-variance-bags-results.txt", "a", encoding="utf8") as log:
         predictors = [] # no BaggedPredictor class, only need bag_predict and list of bagged classifiers
