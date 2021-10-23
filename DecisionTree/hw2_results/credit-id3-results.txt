@@ -1,0 +1,5 @@
+Training error: 0.16283333333333333
+Test error: 0.21133333333333335
+
+
+(P.S) random forests uses subset size = 4, random m' each iteration

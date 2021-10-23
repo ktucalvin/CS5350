@@ -43,6 +43,72 @@ def get_concrete_data():
     
     return get_lms_data("concrete") + (attributes,)
 
+def get_credit_data():
+    attributes = {
+        "ID": [1, -1],
+        "LIMIT_BAL": [1, -1],
+        "SEX": [1, -1],
+        "EDUCATION": [1, -1],
+        "MARRIAGE": [1, -1],
+        "AGE": [1, -1],
+        "PAY_0": [1, -1],
+        "PAY_2": [1, -1],
+        "PAY_3": [1, -1],
+        "PAY_4": [1, -1],
+        "PAY_5": [1, -1],
+        "PAY_6": [1, -1],
+        "BILL_AMT1": [1, -1],
+        "BILL_AMT2": [1, -1],
+        "BILL_AMT3": [1, -1],
+        "BILL_AMT4": [1, -1],
+        "BILL_AMT5": [1, -1],
+        "BILL_AMT6": [1, -1],
+        "PAY_AMT1": [1, -1],
+        "PAY_AMT2": [1, -1],
+        "PAY_AMT3": [1, -1],
+        "PAY_AMT4": [1, -1],
+        "PAY_AMT5": [1, -1],
+        "PAY_AMT6": [1, -1]
+    }
+
+    labels = [1, -1]
+
+    with open("./datasets/credit/credit.csv") as file:
+        X = []
+        Y = []
+
+        for line in file:
+            example = [1] + list(map(float, line.strip().split(',')))[1:]
+            X.append(tuple(example[:-1]))
+            Y.append(1 if example[-1] == 1 else -1)
+        
+        averages = np.average(np.matrix(X), axis=0)
+        for row,ex in enumerate(X):
+            X[row] = np.ravel(np.array(np.array(ex) > averages, dtype=float))
+        
+        np.random.seed(1)
+        train_indices = np.random.choice(len(X), 24000)
+        np.random.seed(2)
+        test_indices = np.random.choice(len(X), 6000)
+
+        Xtrain = np.matrix(X)[train_indices]
+        Ytrain = np.matrix(Y).T[train_indices]
+
+        Xtest = np.matrix(X)[test_indices]
+        Ytest = np.matrix(Y).T[test_indices]
+
+        S = np.concatenate((Xtrain, Ytrain), axis=1)
+        val = np.concatenate((Xtest, Ytest), axis=1)
+        
+        # adaboost needs labels to be -1,+1
+        S[S == 0] = -1
+        val[val == 0] = -1
+
+        S = [tuple(example) for example in S.tolist()]
+        val = [tuple(example) for example in val.tolist()]
+
+        return S, val, attributes, labels
+
 def preprocess_bank_data(refill_unknown=False, numeric_labels=False):
     S = []
     with open("./datasets/bank/train.csv") as file:
