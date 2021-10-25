@@ -43,6 +43,70 @@ def get_concrete_data():
     
     return get_lms_data("concrete") + (attributes,)
 
+def get_ilp_data(binarize=False):
+    # :NOTE: test dataset does not have labels, but instead has additional "id" column
+    attributes = {
+        "age": [-1, 1], # continuous
+        "workclass": ["Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov", "Local-gov", "State-gov", "Without-pay", "Never-worked"],
+        "fnlwgt": [-1, 1], # continuous
+        "education": ["Bachelors", "Some-college", "11th", "HS-grad", "Prof-school", "Assoc-acdm", "Assoc-voc", "9th", "7th-8th", "12th", "Masters", "1st-4th", "10th", "Doctorate", "5th-6th", "Preschool"],
+        "education-num": [-1, 1], # continuous
+        "marital-status": ["Married-civ-spouse", "Divorced", "Never-married", "Separated", "Widowed", "Married-spouse-absent", "Married-AF-spouse"],
+        "occupation": ["Tech-support", "Craft-repair", "Other-service", "Sales", "Exec-managerial", "Prof-specialty", "Handlers-cleaners", "Machine-op-inspct", "Adm-clerical", "Farming-fishing", "Transport-moving", "Priv-house-serv", "Protective-serv", "Armed-Forces"],
+        "relationship": ["Wife", "Own-child", "Husband", "Not-in-family", "Other-relative", "Unmarried"],
+        "race": ["White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"],
+        "sex": ["Female", "Male"],
+        "capital-gain": [-1, 1], # continuous
+        "capital-loss": [-1, 1], # continuous
+        "hours-per-week": [-1, 1], # continuous
+        "native-country": ["United-States", "Cambodia", "England", "Puerto-Rico", "Canada", "Germany", "Outlying-US(Guam-USVI-etc)", "India", "Japan", "Greece", "South", "China", "Cuba", "Iran", "Honduras", "Philippines", "Italy", "Poland", "Jamaica", "Vietnam", "Mexico", "Portugal", "Ireland", "France", "Dominican-Republic", "Laos", "Ecuador", "Taiwan", "Haiti", "Columbia", "Hungary", "Guatemala", "Nicaragua", "Scotland", "Thailand", "Yugoslavia", "El-Salvador", "Trinadad&Tobago", "Peru", "Hong", "Holand-Netherlands"],
+    }
+    labels = ["-1", "1"]
+
+    S = []
+    with open("./datasets/ilp2021f/train_final.csv") as file:
+        for line in file:
+            example = line.strip().split(',')
+            example[-1] = "1" if example[-1] == "1" else "-1"
+            S.append(tuple(example))
+
+    val = []
+    with open("./datasets/ilp2021f/test_final.csv") as file:
+        for line in file:
+            val.append(tuple(line.strip().split(',')))
+    
+    # i.e. if using sklearn
+    if not binarize:
+        return S, val, attributes, labels
+
+    continuous_features = ["age", "fnlwgt", "education-num", "capital-gain", "capital-loss", "hours-per-week"]
+    attr = list(attributes.keys())
+    medians = []
+
+    for feature in continuous_features:
+        medians.append(np.median([float(x[attr.index(feature)]) for x in S]))
+
+    # Replace numeric features with 1 or 0 if above or below median (or -1 if pdays)
+    for index, example in enumerate(S):
+        example = list(example)
+        for median_index, feature in enumerate(continuous_features):
+            feature_index = attr.index(feature)
+            example[feature_index] = "1" if float(
+                example[feature_index]) > medians[median_index] else "-1"
+        
+        S[index] = tuple(example)
+    
+    for index, example in enumerate(val):
+        example = list(example)
+        for median_index, feature in enumerate(continuous_features):
+            feature_index = attr.index(feature) + 1 # shift for id column
+            example[feature_index] = "1" if float(
+                example[feature_index]) > medians[median_index] else "-1"
+        
+        val[index] = tuple(example)
+    
+    return S, val, attributes, labels
+
 def get_credit_data():
     attributes = {
         "ID": [1, -1],
