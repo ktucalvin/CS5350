@@ -1,10 +1,13 @@
+from pathlib import Path
 import numpy as np
+
+DATA_DIR = Path(__file__).parent
 
 def get_lms_data(dataset):
     """Prepares dataset where all values are numeric. Also appends a leading 1 to account for bias term."""
     Xtrain = []
     Ytrain = []
-    with open(f"./datasets/{dataset}/train.csv") as file:
+    with (DATA_DIR / dataset).open() as file:
         for line in file:
             example = [1] + list(map(float, line.strip().split(',')))
             Xtrain.append(tuple(example[:-1]))
@@ -12,7 +15,7 @@ def get_lms_data(dataset):
     
     Xtest = []
     Ytest = []
-    with open(f"./datasets/{dataset}/test.csv") as file:
+    with (DATA_DIR / dataset).open() as file:
         for line in file:
             example = [1] + list(map(float, line.strip().split(',')))
             Xtest.append(tuple(example[:-1]))
@@ -47,31 +50,31 @@ def get_ilp_data(binarize=False):
     # :NOTE: test dataset does not have labels, but instead has additional "id" column
     attributes = {
         "age": [-1, 1], # continuous
-        "workclass": ["Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov", "Local-gov", "State-gov", "Without-pay", "Never-worked"],
+        "workclass": ["?", "Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov", "Local-gov", "State-gov", "Without-pay", "Never-worked"],
         "fnlwgt": [-1, 1], # continuous
-        "education": ["Bachelors", "Some-college", "11th", "HS-grad", "Prof-school", "Assoc-acdm", "Assoc-voc", "9th", "7th-8th", "12th", "Masters", "1st-4th", "10th", "Doctorate", "5th-6th", "Preschool"],
+        "education": ["?", "Bachelors", "Some-college", "11th", "HS-grad", "Prof-school", "Assoc-acdm", "Assoc-voc", "9th", "7th-8th", "12th", "Masters", "1st-4th", "10th", "Doctorate", "5th-6th", "Preschool"],
         "education-num": [-1, 1], # continuous
-        "marital-status": ["Married-civ-spouse", "Divorced", "Never-married", "Separated", "Widowed", "Married-spouse-absent", "Married-AF-spouse"],
-        "occupation": ["Tech-support", "Craft-repair", "Other-service", "Sales", "Exec-managerial", "Prof-specialty", "Handlers-cleaners", "Machine-op-inspct", "Adm-clerical", "Farming-fishing", "Transport-moving", "Priv-house-serv", "Protective-serv", "Armed-Forces"],
-        "relationship": ["Wife", "Own-child", "Husband", "Not-in-family", "Other-relative", "Unmarried"],
-        "race": ["White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"],
-        "sex": ["Female", "Male"],
+        "marital-status": ["?", "Married-civ-spouse", "Divorced", "Never-married", "Separated", "Widowed", "Married-spouse-absent", "Married-AF-spouse"],
+        "occupation": ["?", "Tech-support", "Craft-repair", "Other-service", "Sales", "Exec-managerial", "Prof-specialty", "Handlers-cleaners", "Machine-op-inspct", "Adm-clerical", "Farming-fishing", "Transport-moving", "Priv-house-serv", "Protective-serv", "Armed-Forces"],
+        "relationship": ["?", "Wife", "Own-child", "Husband", "Not-in-family", "Other-relative", "Unmarried"],
+        "race": ["?", "White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"],
+        "sex": ["?", "Female", "Male"],
         "capital-gain": [-1, 1], # continuous
         "capital-loss": [-1, 1], # continuous
         "hours-per-week": [-1, 1], # continuous
-        "native-country": ["United-States", "Cambodia", "England", "Puerto-Rico", "Canada", "Germany", "Outlying-US(Guam-USVI-etc)", "India", "Japan", "Greece", "South", "China", "Cuba", "Iran", "Honduras", "Philippines", "Italy", "Poland", "Jamaica", "Vietnam", "Mexico", "Portugal", "Ireland", "France", "Dominican-Republic", "Laos", "Ecuador", "Taiwan", "Haiti", "Columbia", "Hungary", "Guatemala", "Nicaragua", "Scotland", "Thailand", "Yugoslavia", "El-Salvador", "Trinadad&Tobago", "Peru", "Hong", "Holand-Netherlands"],
+        "native-country": ["?", "United-States", "Cambodia", "England", "Puerto-Rico", "Canada", "Germany", "Outlying-US(Guam-USVI-etc)", "India", "Japan", "Greece", "South", "China", "Cuba", "Iran", "Honduras", "Philippines", "Italy", "Poland", "Jamaica", "Vietnam", "Mexico", "Portugal", "Ireland", "France", "Dominican-Republic", "Laos", "Ecuador", "Taiwan", "Haiti", "Columbia", "Hungary", "Guatemala", "Nicaragua", "Scotland", "Thailand", "Yugoslavia", "El-Salvador", "Trinadad&Tobago", "Peru", "Hong", "Holand-Netherlands"],
     }
-    labels = ["-1", "1"]
+    labels = [-1, 1]
 
     S = []
-    with open("./datasets/ilp2021f/train_final.csv") as file:
+    with (DATA_DIR / "./ilp2021f/train_final.csv").open() as file:
         for line in file:
             example = line.strip().split(',')
-            example[-1] = "1" if example[-1] == "1" else "-1"
+            example[-1] = 1 if example[-1] == "1" else -1
             S.append(tuple(example))
 
     val = []
-    with open("./datasets/ilp2021f/test_final.csv") as file:
+    with (DATA_DIR / "./ilp2021f/test_final.csv").open() as file:
         for line in file:
             val.append(tuple(line.strip().split(',')))
     
@@ -91,8 +94,8 @@ def get_ilp_data(binarize=False):
         example = list(example)
         for median_index, feature in enumerate(continuous_features):
             feature_index = attr.index(feature)
-            example[feature_index] = "1" if float(
-                example[feature_index]) > medians[median_index] else "-1"
+            example[feature_index] = 1 if float(
+                example[feature_index]) > medians[median_index] else -1
         
         S[index] = tuple(example)
     
@@ -100,8 +103,8 @@ def get_ilp_data(binarize=False):
         example = list(example)
         for median_index, feature in enumerate(continuous_features):
             feature_index = attr.index(feature) + 1 # shift for id column
-            example[feature_index] = "1" if float(
-                example[feature_index]) > medians[median_index] else "-1"
+            example[feature_index] = 1 if float(
+                example[feature_index]) > medians[median_index] else -1
         
         val[index] = tuple(example)
     
@@ -137,7 +140,7 @@ def get_credit_data():
 
     labels = [1, -1]
 
-    with open("./datasets/credit/credit.csv") as file:
+    with (DATA_DIR / "./credit/credit.csv").open() as file:
         X = []
         Y = []
 
@@ -175,12 +178,12 @@ def get_credit_data():
 
 def preprocess_bank_data(refill_unknown=False, numeric_labels=False):
     S = []
-    with open("./datasets/bank/train.csv") as file:
+    with (DATA_DIR / "./bank/train.csv").open() as file:
         for line in file:
             S.append(tuple(line.strip().split(',')))
 
     val = []
-    with open("./datasets/bank/test.csv") as file:
+    with (DATA_DIR / "./bank/test.csv").open() as file:
         for line in file:
             val.append(tuple(line.strip().split(',')))
 
