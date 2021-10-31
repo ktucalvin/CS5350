@@ -7,7 +7,7 @@ def get_lms_data(dataset):
     """Prepares dataset where all values are numeric. Also appends a leading 1 to account for bias term."""
     Xtrain = []
     Ytrain = []
-    with (DATA_DIR / dataset).open() as file:
+    with (DATA_DIR / dataset / "train.csv").open() as file:
         for line in file:
             example = [1] + list(map(float, line.strip().split(',')))
             Xtrain.append(tuple(example[:-1]))
@@ -15,7 +15,7 @@ def get_lms_data(dataset):
     
     Xtest = []
     Ytest = []
-    with (DATA_DIR / dataset).open() as file:
+    with (DATA_DIR / dataset / "test.csv").open() as file:
         for line in file:
             example = [1] + list(map(float, line.strip().split(',')))
             Xtest.append(tuple(example[:-1]))
@@ -31,6 +31,30 @@ def get_hw2_data():
     ]
     
     return get_lms_data("hw2") + (attributes,)
+
+def get_bank_note_data():
+    attributes = [
+        "variance",
+        "skewness",
+        "curtosis",
+        "entropy"
+    ]
+
+    # Use numpy matrices instead of lists of lists
+    Xtrain, Ytrain, Xtest, Ytest = get_lms_data("bank-note")
+    Xtrain = np.array(Xtrain)
+    Ytrain = np.array(Ytrain)
+    Xtest = np.array(Xtest)
+    Ytest = np.array(Ytest)
+
+    # Use labels {-1, +1}
+    Ytrain[Ytrain == 0] = -1
+    Ytest[Ytest == 0] = -1
+
+    Ytrain = Ytrain.reshape(-1,1)
+    Ytest = Ytest.reshape(-1,1)
+
+    return Xtrain, Ytrain, Xtest, Ytest, attributes
 
 def get_concrete_data():
     attributes = [
