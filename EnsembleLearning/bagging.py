@@ -1,5 +1,10 @@
+# Sibling imports https://stackoverflow.com/questions/6323860/sibling-package-imports
+import sys
+import os.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import datasets
-from id3 import ID3
+from DecisionTree.id3 import ID3
 import numpy as np
 
 def bag_predict_majority(bag, input):

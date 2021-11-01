@@ -52,7 +52,7 @@ class StochasticGradientDescentClassifier():
             t = 0
             while norm > threshold:
                 # shuffle examples
-                shuffled = np.random.permutation(X.shape[1])
+                shuffled = np.random.permutation(X.shape[0])
                 samplesX = X[shuffled]
                 samplesY = Y[shuffled]
 

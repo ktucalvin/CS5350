@@ -22,6 +22,7 @@ def get_lms_data(dataset):
             Ytest.append(example[-1])
     
     return Xtrain, Ytrain, Xtest, Ytest
+
 def get_hw2_data():
     attributes = [
         "x1",
