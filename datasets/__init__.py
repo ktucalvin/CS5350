@@ -189,12 +189,13 @@ def get_credit_data():
         Xtest = np.matrix(X)[test_indices]
         Ytest = np.matrix(Y).T[test_indices]
 
+        # adaboost needs labels to be -1,+1
+        Ytrain[Ytrain == 0] = -1
+        Ytest[Ytest == 0] = -1
+
         S = np.concatenate((Xtrain, Ytrain), axis=1)
         val = np.concatenate((Xtest, Ytest), axis=1)
         
-        # adaboost needs labels to be -1,+1
-        S[S == 0] = -1
-        val[val == 0] = -1
 
         S = [tuple(example) for example in S.tolist()]
         val = [tuple(example) for example in val.tolist()]
