@@ -71,14 +71,14 @@ class DualSVMClassifier:
         def svm_objective(A):
             if kernel == "linear":
                 xsum = np.sum(X @ X.T)
-                total = 0
-                for i in range(N):
-                    for j in range(N):
-                        total += 0.5 * Y[i] * Y[j] * A[i] * A[j] * X[i].T@X[j]
-                total *= 0.5
-                total -= np.sum(A)
-                return total
-                # return 0.5 * np.sum(Y @ A) ** 2 * np.sum(X @ X.T) - np.sum(A)
+                # total = 0
+                # for i in range(N):
+                #     for j in range(N):
+                #         total += 0.5 * Y[i] * Y[j] * A[i] * A[j] * X[i].T@X[j]
+                # total *= 0.5
+                # total -= np.sum(A)
+                # return total
+                return 0.5 * np.sum(Y @ A) ** 2 * np.sum(X @ X.T) - np.sum(A)
                 # return 0.5 * np.sum(Y @ Y.T) * np.sum(A @ A.T) * xsum - np.sum(A)
             
             # pairwise distance
