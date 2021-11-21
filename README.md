@@ -1,6 +1,9 @@
 This is a machine learning library developed by Calvin Tu for CS5350/6350 at the University of Utah.
 
-# Perceptron Models (Standard, Voted, Averaged)
+## Support Vector Machines
+First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning.
+
+## Perceptron Models (Standard, Voted, Averaged)
 
 First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for Perceptron learning.
 
@@ -53,7 +56,7 @@ tuples (weight_vector, count).
 
 The running-averaged weight vector for AveragedPerceptron can be inspected throuhg `AveragedPerceptron.a`.
 
-# LMS Models (Batch/Stochastic Gradient Descent)
+## LMS Models (Batch/Stochastic Gradient Descent)
 
 First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for LMS learning.
 
@@ -91,7 +94,7 @@ Prediction is done through `model.predict(x)` where x is a numpy array of the sa
 
 The weight vector of each classifier can be inspected at any time through the `w` property.
 
-# Ensemble models (Adaboost, Bagging, Random Forests)
+## Ensemble models (Adaboost, Bagging, Random Forests)
 
 First ensure that data labels are {-1, 1}. The `bank` and `credit` datasets are set up for ensemble learning.
 
@@ -104,11 +107,11 @@ from EnsembleLearning.adaboost import AdaboostClassifier
 from EnsembleLearning.bagging import BaggedClassifier
 from EnsembleLearning.random_forests import RandomForestClassifier
 
-# These datasets are set up for ensemble learning
+## These datasets are set up for ensemble learning
 S, val, attributes, labels = datasets.preprocess_bank_data(numeric_labels=True)
-# S, val, attributes, labels = datasets.get_credit_data()
+## S, val, attributes, labels = datasets.get_credit_data()
 
-# Where attributes and labels look like this:
+## Where attributes and labels look like this:
 attributes = {
         "age": ["0", "1"],
         "job": ["admin.", "unknown", "unemployed", "management", "housemaid", "entrepreneur",
@@ -153,7 +156,7 @@ Adaboost's ensemble can be read through AdaboostClassifier.ensemble. This is a l
 
 Bagged/RandomForestClassifier's list of stumps/trees can be read through the `bag` property.
 
-# Decision Trees
+## Decision Trees
 
 Basic usage:
 
@@ -161,10 +164,10 @@ Basic usage:
 import id3
 from id3 import ID3
 
-# an example from the raw csv:
-# high,med,5more,4,small,low,unacc
+## an example from the raw csv:
+## high,med,5more,4,small,low,unacc
 
-# Load data from csv into training and validation arrays
+## Load data from csv into training and validation arrays
 with open(f"./datasets/{dataset}/train.csv") as file:
     for line in file:
         S.append(tuple(line.strip().split(',')))
@@ -174,10 +177,10 @@ with open(f"./datasets/{dataset}/test.csv") as file:
     for line in file:
         val.append(tuple(line.strip().split(',')))
 
-# Describe how the data is formatted
-# attributes represents each column and its values
-# these MUST be defined in the same order as columns in the CSV!
-# not including the final label
+## Describe how the data is formatted
+## attributes represents each column and its values
+## these MUST be defined in the same order as columns in the CSV!
+## not including the final label
 attributes = {
     "buying":   ["vhigh", "high", "med", "low"],
     "maint":    ["vhigh", "high", "med", "low"],
@@ -187,27 +190,27 @@ attributes = {
     "safety":   ["low", "med", "high"]
 }
 
-# final labels are assumed to be the last column
+## final labels are assumed to be the last column
 labels = ["unacc", "acc", "good", "vgood"]
 
-# instantiate id3 model
+## instantiate id3 model
 model = ID3()
 
-# measure can be entropy, majority_error, or gini_index
+## measure can be entropy, majority_error, or gini_index
 measure = id3.entropy
 
-# training examples can be fractional/weighted
-# weights should be an array of numbers the same length as S
-# if None, then weights will be set to np.ones(len(S)) (i.e. all ones)
+## training examples can be fractional/weighted
+## weights should be an array of numbers the same length as S
+## if None, then weights will be set to np.ones(len(S)) (i.e. all ones)
 weights = None
 
-# maximum depth of decision tree can be set, but defaults to infinity otherwise
+## maximum depth of decision tree can be set, but defaults to infinity otherwise
 maxdep = 6
 
-# train the model
+## train the model
 model.train(S, attributes, labels, weights, measure, max_depth=maxdep)
 
-# collect predictions from validation dataset
+## collect predictions from validation dataset
 predictions = [model.predict(input) for input in val]
 ```
 
