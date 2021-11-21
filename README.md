@@ -1,7 +1,65 @@
 This is a machine learning library developed by Calvin Tu for CS5350/6350 at the University of Utah.
 
 ## Support Vector Machines
-First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning.
+First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning. All data should
+be augmented with a leading 1, to account for the bias; the Dual SVM will automatically strip it off in its handling of
+the bias though.
+
+Basic usage:
+```python
+import numpy as np
+import datasets
+from SVM import svm
+
+Xtrain, Ytrain, Xtest, Ytest, attributes = datasets.get_bank_note_data()
+
+def evaluate(model, variant):
+    predictions = np.array([model.predict(x) for x in Xtrain]).reshape(-1,1)
+    incorrect_train = np.sum(predictions != Ytrain)
+    predictions = np.array([model.predict(x) for x in Xtest]).reshape(-1,1)
+    incorrect_test = np.sum(predictions != Ytest)
+    print(f"SVM, {variant}\nTest error: {float(incorrect_test) / len(Ytest) :.5f}\nTrain Error: {float(incorrect_train) / len(Ytrain) :.5f}")
+    
+def vec2str(vector):
+    # augmented vector
+    return f"w' = ({','.join([f'{x :.5f}' for x in vector])})"
+
+gamma_0 = 1e-4
+
+primal_simple_model = svm.PrimalSVMClassifier(C=100/873, schedule=lambda t: gamma_0 / (1 + t))
+primal_simple_model.train(Xtrain, Ytrain, epochs=100)
+
+evaluate(primal_simple_model, f"Primal simple schedule, C={c}")
+print(vec2str(primal_simple_model.w))
+
+dual_linear_model = svm.DualSVMClassifier(C=c, tol=1e-6)
+dual_linear_model.train(Xtrain, Ytrain, kernel="linear")
+evaluate(dual_linear_model, f"Dual linear kernel, C={c}")
+print(f"Support vectors: {len(dual_linear_model.support_vectors)}")
+
+dual_gaussian_model = svm.DualSVMClassifier(C=c, tol=1e-6)
+dual_gaussian_model.train(Xtrain, Ytrain, gamma=gamma, kernel="gaussian")
+evaluate(dual_gaussian_model, f"Dual gaussian kernel, gamma={gamma}, C={c}")
+print(f"Support vectors: {len(dual_gaussian_model.support_vectors)}")
+```
+
+Both SVM implementations take in their constructor the regularization hyperparameter `C`.
+
+The Primal SVM constructor additionally takes a schedule function, which should take in the current time step (int) and return a step size (float).
+
+Training a primal SVM is done by calling `model.train(X, Y, epochs)` where epochs is the number of training epochs.
+
+Prediction is done by simply calling `model.predict(x)`.
+
+The Dual SVM constructor takes a float parameter `tol`. Any Lagrange multipliers `alpha_i <= tol` are thrown out and not
+considered support vectors.
+
+Training a dual SVM model is done by calling `model.train(X, Y, gamma, kernel)`. If `kernel=="linear"` then a linear
+kernel will be used to fit the data, and the `gamma` parameter is ignored. Otherwise, a Gaussian kernel will be used
+with the given gamma value.
+
+Prediction is done by calling `model.predict(x)`, where `x` is augmented with a leading 1 (bank_note dataset already does
+this).
 
 ## Perceptron Models (Standard, Voted, Averaged)
 
