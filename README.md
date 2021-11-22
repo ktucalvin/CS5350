@@ -32,31 +32,46 @@ primal_simple_model.train(Xtrain, Ytrain, epochs=100)
 evaluate(primal_simple_model, f"Primal simple schedule, C={c}")
 print(vec2str(primal_simple_model.w))
 
-dual_linear_model = svm.DualSVMClassifier(C=c, tol=1e-6)
-dual_linear_model.train(Xtrain, Ytrain, kernel="linear")
+dual_linear_model = svm.DualSVMClassifier(C=c, tol=1e-10, kernel="linear")
+dual_linear_model.train(Xtrain, Ytrain)
 evaluate(dual_linear_model, f"Dual linear kernel, C={c}")
 print(f"Support vectors: {len(dual_linear_model.support_vectors)}")
+print(vec2str(dual_linear_model.wstar))
+print(f"b* = {dual_linear_model.bstar}")
 
-dual_gaussian_model = svm.DualSVMClassifier(C=c, tol=1e-6)
-dual_gaussian_model.train(Xtrain, Ytrain, gamma=gamma, kernel="gaussian")
+dual_gaussian_model = svm.DualSVMClassifier(C=c, tol=1e-10, kernel="gaussian", gamma=gamma)
+dual_gaussian_model.train(Xtrain, Ytrain)
 evaluate(dual_gaussian_model, f"Dual gaussian kernel, gamma={gamma}, C={c}")
 print(f"Support vectors: {len(dual_gaussian_model.support_vectors)}")
+print(vec2str(dual_gaussian_model.wstar))
+print(f"b* = {dual_gaussian_model.gauss_bstar}")
 ```
 
 Both SVM implementations take in their constructor the regularization hyperparameter `C`.
 
-The Primal SVM constructor additionally takes a schedule function, which should take in the current time step (int) and return a step size (float).
+The Primal SVM constructor additionally takes a schedule function, which should take in the current time step (int)
+and return a step size (float).
 
 Training a primal SVM is done by calling `model.train(X, Y, epochs)` where epochs is the number of training epochs.
 
 Prediction is done by simply calling `model.predict(x)`.
 
 The Dual SVM constructor takes a float parameter `tol`. Any Lagrange multipliers `alpha_i <= tol` are thrown out and not
-considered support vectors.
+considered support vectors. The constructor can also take `kernel="linear"` or `kernel="gaussian"` to select between the
+linear and gaussian kernels, respectively. If `kernel="gaussian"`, then an additional constructor parameter, `gamma` can
+be passed, which represents the gamma term in the gaussian kernel.
 
-Training a dual SVM model is done by calling `model.train(X, Y, gamma, kernel)`. If `kernel=="linear"` then a linear
-kernel will be used to fit the data, and the `gamma` parameter is ignored. Otherwise, a Gaussian kernel will be used
-with the given gamma value.
+For a gaussian kernel model, the following model parameters can also be inspected:
+```
+model.support_labels    # y_i of support vectors
+model.support_vectors   # x_i of support vectors
+model.alpha_star        # vector of non-zero lagrange multipliers
+model.gauss_bstar       # bias term for a gaussian model, only available after calling predict() at least once
+
+model.wstar             # for a gaussian kernel model, will return a nonsensical vector, and should not be inspected
+```
+
+Training a dual SVM model is done by calling `model.train(X, Y)`.
 
 Prediction is done by calling `model.predict(x)`, where `x` is augmented with a leading 1 (bank_note dataset already does
 this).

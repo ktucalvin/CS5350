@@ -56,68 +56,88 @@ class PrimalSVMClassifier:
         return sgn(self.w.T @ x)
 
 class DualSVMClassifier:
-    def __init__(self, C, tol=1e-6):
+    def __init__(self, C, tol=1e-6, kernel="linear", gamma=0.1):
         self.C = C
         self.tol = tol
+        self.kernel = kernel
+        self.gamma = gamma
+        self.gauss_bstar = None
 
-    def train(self, X, Y, kernel="linear", gamma=0.1):
+    def train(self, X, Y):
         # unaugment training data, dual formulation will handle bias separately
         X = X[:,1:]
         Y = Y.reshape((-1))
         N = X.shape[0]
-        svm_constraints = LinearConstraint(Y, lb=0, ub=self.C) # A @ Y = 0
+        svm_constraints ={ "type": "eq", "fun": lambda A: A @ Y } # A @ Y = 0
         svm_bounds = [(0, self.C) for _ in range(N)] # limit each component 0 <= alpha_i <= C
 
         def svm_objective(A):
-            if kernel == "linear":
-                xsum = np.sum(X @ X.T)
-                # total = 0
-                # for i in range(N):
-                #     for j in range(N):
-                #         total += 0.5 * Y[i] * Y[j] * A[i] * A[j] * X[i].T@X[j]
-                # total *= 0.5
-                # total -= np.sum(A)
-                # return total
-                return 0.5 * np.sum(Y @ A) ** 2 * np.sum(X @ X.T) - np.sum(A)
-                # return 0.5 * np.sum(Y @ Y.T) * np.sum(A @ A.T) * xsum - np.sum(A)
+            if self.kernel == "linear":
+                return 0.5 * np.sum(np.outer(Y*A, Y*A) * (X @ X.T).T) - np.sum(A)
             
             # pairwise distance
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html 
-            dists = squareform(pdist(X, 'euclidean'))
-            xsum = np.sum(np.exp(-dists ** 2 / gamma))
-            return 0.5 * (np.sum(Y @ A) ** 2) * xsum - np.sum(A)
-            # for i in range(A.shape[0]):
-            #     for j in range(A.shape[0]):
-            #         return 0.5 * Y[i] * Y[j] * A[i] * A[j] * xsum - np.sum(A)
+            dists = squareform(pdist(X, "euclidean"))
+            dists = np.exp(-1/self.gamma * dists ** 2)
+            return 0.5 * np.sum(np.outer(Y*A, Y*A) * dists.T) - np.sum(A)
 
-        alpha_star = minimize(fun=svm_objective, x0=np.random.rand(N), method="SLSQP",
+        alpha_star = minimize(fun=svm_objective, x0=np.zeros(N), method="SLSQP",
                               constraints=svm_constraints, bounds=svm_bounds)
         
-        nonzero_indices = abs(alpha_star.x) > self.tol
+        if alpha_star.status:
+            print("Optimization for alpha* failed. Aborting.")
+            print(alpha_star)
+            exit()
+
+        nonzero_indices = abs(alpha_star.x) >= self.tol
         self.alpha = alpha_star.x[nonzero_indices]
         self.support_vectors = X[nonzero_indices]
         self.support_labels = Y[nonzero_indices]
-        self.recover_wb()
+        self.recover_wb(alpha_star)
 
-    def recover_wb(self):
+    def recover_wb(self, alpha_star):
         if not len(self.support_vectors):
-            return
+            print("No support vectors found, try turning down the tolerance")
+            print(alpha_star)
+            exit()
 
         self.wstar = np.zeros_like(self.support_vectors[0], dtype='float64')
         for ai, yi, xi in zip(self.alpha, self.support_labels, self.support_vectors):
             self.wstar += ai * yi * xi
 
         # alpha_i already within (0, c) interval, so b* is just average y_j - w* @ xj
-        b = []
+        b = 0
         for yj, xj in zip(self.support_labels, self.support_vectors):
-            b.append(yj - self.wstar @ xj)
+            b += yj - self.wstar @ xj
         
-        self.bstar = np.average(b)
+        self.bstar = b / len(self.support_labels)
 
     def predict(self, x):
         """Predict given an *augmented* input. Prediction will strip off the first term."""
         # unaugment input
         x = x[1:]
-        # Prediction: sgn(w^{*T} @ x + b*)
-        return sgn(self.wstar.T @ x + self.bstar)
-    
+        if self.kernel == "linear":
+            return sgn(self.wstar.T @ x)
+        
+        # Compute b* along with prediction, cache b* for later
+        if self.gauss_bstar is None:
+            b = 0
+            total = 0
+            for ai, yi, xi in zip(self.alpha, self.support_labels, self.support_vectors):
+                for xj in self.support_vectors:
+                    b += ai * yi * self.rbf(xi, xj)
+                total += ai * yi * self.rbf(xi, x)
+            b /= len(self.support_vectors) ** 2
+            self.gauss_bstar = b
+            return sgn(total + b)
+
+        # Use cached b* for prediction
+        total = 0
+        xj = self.support_vectors[0]
+        for ai, yi, xi in zip(self.alpha, self.support_labels, self.support_vectors):
+            total += ai * yi * self.rbf(xi, x)
+        return sgn(total + self.gauss_bstar)
+        
+
+    def rbf(self, x, z):
+        return np.exp(-1/self.gamma * np.linalg.norm(x - z) ** 2)

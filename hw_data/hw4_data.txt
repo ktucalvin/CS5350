@@ -1,0 +1,157 @@
+SVM, Primal simple schedule, C=0.1145475372279496
+Train Error: 0.01147
+Test error: 0.01200
+w' = (0.68744,-0.69866,-0.40164,-0.45710,-0.06777)
+
+SVM, Primal multiplied schedule, C=0.1145475372279496
+Train Error: 0.00917
+Test error: 0.00800
+w' = (1.56778,-1.22365,-0.83255,-0.90269,-0.11321)
+
+C:\Users\Khang\anaconda3\envs\py39\lib\site-packages\scipy\optimize\optimize.py:282: RuntimeWarning: Values in x were outside bounds during a minimize step, clipping to bounds
+  warnings.warn("Values in x were outside bounds during a "
+SVM, Dual linear kernel, C=0.1145475372279496
+Train Error: 0.07110
+Test error: 0.07800
+Support vectors: 46
+w' = (-0.94293,-0.65149,-0.73372,-0.04102)
+b* = 1.0781169779341653
+
+SVM, Dual gaussian kernel, gamma=0.1, C=0.1145475372279496
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 869
+w' = (-176.13377,-239.85224,47.90532,-0.68468)
+b* = 479.03148146925986
+
+SVM, Dual gaussian kernel, gamma=0.5, C=0.1145475372279496
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 825
+w' = (-170.68421,-235.38789,44.97658,1.47892)
+b* = 417.24472728240136
+
+SVM, Dual gaussian kernel, gamma=1, C=0.1145475372279496
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 805
+w' = (-168.04442,-229.83875,42.45664,1.37525)
+b* = 374.709243298951
+
+SVM, Dual gaussian kernel, gamma=5, C=0.1145475372279496
+Train Error: 0.00803
+Test error: 0.00600
+Support vectors: 442
+w' = (-86.50378,-123.91966,39.03115,-0.90399)
+b* = 61.95705481524936
+
+SVM, Dual gaussian kernel, gamma=100, C=0.1145475372279496
+Train Error: 0.00344
+Test error: 0.00400
+Support vectors: 290
+w' = (-39.34292,-35.18496,-8.52083,1.22063)
+b* = 44.42743314753392
+
+SVM, Primal simple schedule, C=0.572737686139748
+Train Error: 0.00803
+Test error: 0.00800
+w' = (1.29286,-1.00230,-0.70162,-0.78042,-0.10370)
+
+SVM, Primal multiplied schedule, C=0.572737686139748
+Train Error: 0.01261
+Test error: 0.01000
+w' = (3.64488,-3.27509,-2.08948,-2.26691,-0.90909)
+
+SVM, Dual linear kernel, C=0.572737686139748
+Train Error: 0.05619
+Test error: 0.06600
+Support vectors: 38
+w' = (-1.56394,-1.01405,-1.18065,-0.15652)
+b* = 1.5581614593056006
+
+SVM, Dual gaussian kernel, gamma=0.1, C=0.572737686139748
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 869
+w' = (-877.20518,-1196.95373,243.61469,-1.48370)
+b* = 2386.371331144227
+
+SVM, Dual gaussian kernel, gamma=0.5, C=0.572737686139748
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 731
+w' = (-576.51465,-852.38211,234.73482,14.16532)
+b* = 1352.420860772358
+
+SVM, Dual gaussian kernel, gamma=1, C=0.572737686139748
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 556
+w' = (-384.26227,-577.33316,183.42106,5.41979)
+b* = 693.8596413498143
+
+SVM, Dual gaussian kernel, gamma=5, C=0.572737686139748
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 208
+w' = (-107.37913,-163.19450,60.53544,-2.14226)
+b* = 11.287669019962042
+
+SVM, Dual gaussian kernel, gamma=100, C=0.572737686139748
+Train Error: 0.00000
+Test error: 0.00000
+Support vectors: 116
+w' = (-48.92668,-37.96102,-18.77101,7.38008)
+b* = 66.49495844447554
+
+SVM, Primal simple schedule, C=0.8018327605956472
+Train Error: 0.00917
+Test error: 0.00800
+w' = (1.40616,-1.10957,-0.74688,-0.83840,-0.05455)
+
+SVM, Primal multiplied schedule, C=0.8018327605956472
+Train Error: 0.00917
+Test error: 0.01200
+w' = (4.47364,-3.87294,-3.07848,-3.26220,-0.25673)
+
+SVM, Dual linear kernel, C=0.8018327605956472
+Train Error: 0.05619
+Test error: 0.06200
+Support vectors: 77
+w' = (-2.04254,-1.28070,-1.51352,-0.24906)
+b* = 2.368955040016421
+
+SVM, Dual gaussian kernel, gamma=0.1, C=0.8018327605956472
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 868
+w' = (-1146.58725,-1595.01645,368.09492,9.50632)
+b* = 3119.109003036107
+
+SVM, Dual gaussian kernel, gamma=0.5, C=0.8018327605956472
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 694
+w' = (-625.78566,-936.60755,272.94233,14.80885)
+b* = 1597.61010245803
+
+SVM, Dual gaussian kernel, gamma=1, C=0.8018327605956472
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 528
+w' = (-398.55899,-594.95888,190.28484,3.88852)
+b* = 854.6322504485253
+
+SVM, Dual gaussian kernel, gamma=5, C=0.8018327605956472
+Train Error: 0.00000
+Test error: 0.00200
+Support vectors: 194
+w' = (-108.95612,-163.43596,60.55605,-2.54728)
+b* = 111.5362761620678
+
+SVM, Dual gaussian kernel, gamma=100, C=0.8018327605956472
+Train Error: 0.00000
+Test error: 0.00000
+Support vectors: 99
+w' = (-50.07240,-41.17387,-21.25979,11.68316)
+b* = 60.389969026411144
