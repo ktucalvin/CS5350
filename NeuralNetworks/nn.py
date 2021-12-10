@@ -1,9 +1,11 @@
 import numpy as np
+import math
+from queue import SimpleQueue
 
 
 class NNActivations():
     def sigmoid(x):
-        return 1 / (1 + np.exp(-x))
+        return 1 / (1 + math.exp(-x))
 
     def linear(x):
         return x
@@ -37,24 +39,39 @@ class Node:
         self.outputs = []
         self.value = 0
 
-    def forward(self):
+    def forward(self, weights):
         # compute the output activation of this node
         # output is always activation(dot product, weights and input values)
         # weights are always on inbound edges
         val = 0
-        for node, weight in self.inputs:
-            val += node.value * weight
+        for node in self.inputs:
+            val += node.value * weights[f"{self.layer}_{node.id}-{self.id}"]
         self.value = self.activation(val)
 
-    def backward(self):
-        # compute the gradient of this node, using the gradient cache (backprop)
+    def backward(self, weights):
+        # backprop
 
-        # DFS forward accumulating gradient? then apply gradients in train
-        pass
-    
+        # gradient of this node depends on outbound edges
+        # only need to compute and cache if this node is not a bias node
+        if self.activation != NNActivations.bias:
+            grad = 0
+            for node in self.outputs:
+                weight = weights[f"{node.layer}_{self.id}-{node.id}"]
+                node_grad = GRAD_CACHE[node.get_id()] * weight
+                if node.activation == NNActivations.sigmoid:
+                    node_grad *= node.value * (1 - node.value)
+                grad += node_grad
+            GRAD_CACHE[self.get_id()] = grad
+
+        # compute gradients of inbound weights
+        for node in self.inputs:
+            weight = weights[f"{self.layer}_{node.id}-{self.id}"]
+            GRAD_CACHE[f"{self.layer}_{node.id}-{self.id}"] = GRAD_CACHE[self.get_id()] * \
+                weight * self.value * (1 - self.value)
+
     def get_id(self):
         return f"{self.layer}-{self.id}"
-    
+
     def __repr__(self) -> str:
         return f"Node(layer={self.layer}, id={self.id}, activation={self.activation.__name__})"
 
@@ -69,51 +86,97 @@ class NeuralNetworkClassifier:
     def __init__(self, layer_width, dims, schedule, get_weight=WeightInitializer.gaussian):
         self.schedule = schedule
 
-        # construct layers
-        # layer is list of tuples (Node, weight)
+        # construct layers ; weights are stored in single map
+        self.weights = {}
         self.network = Node(3, 0, activation=NNActivations.linear)
-        layer2 = [(Node(2, 0, activation=NNActivations.bias), get_weight())] + \
-                 [(Node(2, i), get_weight()) for i in range(1, layer_width)]
-        layer1 = [(Node(1, 0, activation=NNActivations.bias), get_weight())] + \
-                 [(Node(1, i), get_weight()) for i in range(1, layer_width)]
+        layer2 = [Node(2, 0, activation=NNActivations.bias)] + \
+                 [Node(2, i) for i in range(1, layer_width)]
+        layer1 = [Node(1, 0, activation=NNActivations.bias)] + \
+                 [Node(1, i) for i in range(1, layer_width)]
         self.inputs = [Node(0, i, activation=NNActivations.linear)
                        for i in range(dims)]
 
-        # Connect layers, such that bias node has outputs to next layer but no inputs
+        # Connect layers to form a 3-layer feed-forward network w/ bias nodes
 
         # Layer 2 ---> Output layer
         self.network.inputs = layer2
-        for node, _ in layer2[1:]:
-            node.outputs = [(self.network, get_weight())]
+        for node in layer2[1:]:
+            node.outputs = [self.network]
             node.inputs = layer1
-        layer2[0][0].outputs = [(self.network, get_weight())]
+        layer2[0].outputs = [self.network]
 
         # Layer 1 ---> Layer 2
-        for node, _ in layer1[1:]:
+        for node in layer1[1:]:
             node.outputs = layer2[1:]
-            node.inputs = [(node, get_weight()) for node in self.inputs]
-        layer1[0][0].outputs = layer2[1:]
+            node.inputs = self.inputs
+        layer1[0].outputs = layer2[1:]
 
         # Inputs ---> Layer 1
         for node in self.inputs:
             node.outputs = layer1[1:]
-
+        
+        # Initialize weights, {toLayer}_{fromId}-{toId}
+        for i in range(layer_width):
+            self.weights[f"3_{i}-0"] = get_weight()
+            for j in range(1, layer_width):
+                self.weights[f"2_{i}-{j}"] = get_weight()
+                self.weights[f"1_{i}-{j}"] = get_weight()
+        
     def train(self, X, Y, epochs=10):
         # sgd-like + backprop
         # For epoch 1... T
         for epoch in range(epochs):
             # Shuffle training data S
-            shuffled = np.random.permutation(N)
+            shuffled = np.random.permutation(X.shape[0])
             samplesX = X[shuffled]
             samplesY = Y[shuffled]
             t = 1
             # For each xi, yi in S
             for xi, yi in zip(samplesX, samplesY):
                 # compute gradient w/ backprop
-                # call backward() on each node in BFS order, on the reverse graph starting from output node
-                # update weights
+                # compute dL/dy here, begin BFS on children
                 gamma = self.schedule(t)
+
+                topgrad = self.predict(xi) - yi[0]
+                GRAD_CACHE[self.network.get_id()] = topgrad
+                for node in self.network.inputs:
+                    GRAD_CACHE[f"{self.network.layer}_{node.id}-{self.network.id}"] = topgrad * node.value
+                visited = set()
+                queue = SimpleQueue()
+                for node in self.network.inputs:
+                    queue.put(node)
+
+                # Call backward() on each node in BFS order, on the reverse graph
+                while not queue.empty():
+                    curr = queue.get()
+                    if curr.get_id() in visited or curr.layer == 0:
+                        continue
+                    curr.backward(self.weights)
+                    visited.add(curr.get_id())
+                    for node in curr.inputs:
+                        queue.put(node)
+
+                # BFS again to update weights
+                visited.clear()
+                for node in self.network.inputs:
+                    queue.put(node)
+
+                while not queue.empty():
+                    curr = queue.get()
+                    if curr.get_id() in visited:
+                        continue
+
+                    # update weight
+                    for outnode in curr.outputs:
+                        self.weights[f"{outnode.layer}_{curr.id}-{outnode.id}"] -= gamma * \
+                            GRAD_CACHE[f"{outnode.layer}_{curr.id}-{outnode.id}"]
+
+                    visited.add(curr.get_id())
+                    for node in curr.inputs:
+                        queue.put(node)
+
                 t += 1
+                GRAD_CACHE.clear()
 
     def predict(self, x):
         # plug input into network by rewriting input neurons
@@ -126,17 +189,18 @@ class NeuralNetworkClassifier:
         visited = set()
         stack = [self.network]
         while len(stack):
-            curr = stack[-1] # just want to peek at top of stack
+            curr = stack[-1]  # just want to peek at top of stack
             if curr.get_id() in visited:
                 stack.pop()
 
             # check subset of curr.inputs to ensure iterative postorder DFS works
-            descendants = [n for n, _ in curr.inputs if n.get_id() not in visited and n.layer > 0]
+            descendants = [n for n in curr.inputs if n.get_id()
+                           not in visited and n.layer > 0]
             if len(descendants):
                 stack += descendants
             else:
                 visited.add(curr.get_id())
-                curr.forward()
+                curr.forward(self.weights)
                 stack.pop()
-        
+
         return self.network.value
