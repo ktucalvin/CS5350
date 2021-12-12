@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from queue import SimpleQueue
+import matplotlib.pyplot as plt
 
 
 class NNActivations():
@@ -27,6 +28,7 @@ class WeightInitializer():
 
 
 GRAD_CACHE = {}
+LOSS_HISTORY = []
 
 
 class Node:
@@ -49,25 +51,27 @@ class Node:
         self.value = self.activation(val)
 
     def backward(self, weights):
-        # backprop
+        # only need to compute gradient of this node and inbound weights if this node is not a bias node
+        if self.activation == NNActivations.bias:
+            return
 
+        # backprop
         # gradient of this node depends on outbound edges
-        # only need to compute and cache if this node is not a bias node
-        if self.activation != NNActivations.bias:
-            grad = 0
-            for node in self.outputs:
-                weight = weights[f"{node.layer}_{self.id}-{node.id}"]
-                node_grad = GRAD_CACHE[node.get_id()] * weight
-                if node.activation == NNActivations.sigmoid:
-                    node_grad *= node.value * (1 - node.value)
-                grad += node_grad
-            GRAD_CACHE[self.get_id()] = grad
+        grad = 0
+        for node in self.outputs:
+            weight = weights[f"{node.layer}_{self.id}-{node.id}"]
+            node_grad = GRAD_CACHE[node.get_id()] * weight
+            if node.activation == NNActivations.sigmoid:
+                node_grad *= node.value * (1 - node.value)
+            grad += node_grad
+        GRAD_CACHE[self.get_id()] = grad
 
         # compute gradients of inbound weights
         for node in self.inputs:
-            weight = weights[f"{self.layer}_{node.id}-{self.id}"]
-            GRAD_CACHE[f"{self.layer}_{node.id}-{self.id}"] = GRAD_CACHE[self.get_id()] * \
-                weight * self.value * (1 - self.value)
+            wstr = f"{self.layer}_{node.id}-{self.id}"
+            weight = weights[wstr]
+            GRAD_CACHE[wstr] = GRAD_CACHE[self.get_id()] * \
+                self.value * (1 - self.value) * weight
 
     def get_id(self):
         return f"{self.layer}-{self.id}"
@@ -123,6 +127,7 @@ class NeuralNetworkClassifier:
                 self.weights[f"1_{i}-{j}"] = get_weight()
         
     def train(self, X, Y, epochs=10):
+        Y = np.ravel(Y)
         # sgd-like + backprop
         # For epoch 1... T
         for epoch in range(epochs):
@@ -131,13 +136,17 @@ class NeuralNetworkClassifier:
             samplesX = X[shuffled]
             samplesY = Y[shuffled]
             t = 1
+            loss = 0
+
             # For each xi, yi in S
             for xi, yi in zip(samplesX, samplesY):
                 # compute gradient w/ backprop
                 # compute dL/dy here, begin BFS on children
                 gamma = self.schedule(t)
 
-                topgrad = self.predict(xi) - yi[0]
+                pred = self.predict(xi)
+                loss += 0.5 * (pred - yi) ** 2
+                topgrad = pred - yi
                 GRAD_CACHE[self.network.get_id()] = topgrad
                 for node in self.network.inputs:
                     GRAD_CACHE[f"{self.network.layer}_{node.id}-{self.network.id}"] = topgrad * node.value
@@ -168,8 +177,8 @@ class NeuralNetworkClassifier:
 
                     # update weight
                     for outnode in curr.outputs:
-                        self.weights[f"{outnode.layer}_{curr.id}-{outnode.id}"] -= gamma * \
-                            GRAD_CACHE[f"{outnode.layer}_{curr.id}-{outnode.id}"]
+                        wstr = f"{outnode.layer}_{curr.id}-{outnode.id}"
+                        self.weights[wstr] = self.weights[wstr] - gamma * GRAD_CACHE[wstr]
 
                     visited.add(curr.get_id())
                     for node in curr.inputs:
@@ -177,6 +186,11 @@ class NeuralNetworkClassifier:
 
                 t += 1
                 GRAD_CACHE.clear()
+
+            loss /= len(samplesX)
+            LOSS_HISTORY.append(loss)
+        plt.plot(np.arange(epochs), LOSS_HISTORY)
+        plt.show()
 
     def predict(self, x):
         # plug input into network by rewriting input neurons
