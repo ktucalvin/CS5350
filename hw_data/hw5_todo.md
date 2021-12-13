@@ -35,7 +35,7 @@ b) Obtain the ML estimation
 
   - Don't assume a prior
   - Use the same learning rate schedule
-  - Report train/test error for each setting of variance v
+  - Report train/test error
 
 c) Compare train/test performance between MAP estimation and MLE. What do you think of *v* as compared to the
 hyperparameter *C* used in SVMs

@@ -14,8 +14,9 @@ class NeuralNetworkClassifier(nn.Module):
             stack.append(nn.Linear(width, width))
             stack.append(activation())
         stack.append(nn.Linear(width, 1))
-
+        stack.append(nn.Sigmoid()) # add sigmoid for binary classification
         self.network = nn.Sequential(*stack)
+        self.double()
     
     def init_weights(self, strategy="xavier"):
         if strategy == "xavier":
@@ -25,15 +26,14 @@ class NeuralNetworkClassifier(nn.Module):
     
     def init_xavier(self, module):
         if isinstance(module, nn.Linear):
-            torch.nn.init.xavier_uniform(module.weight)
+            torch.nn.init.xavier_uniform_(module.weight)
             module.bias.data.fill_(0.01)
     
     def init_he(self, module):
         if isinstance(module, nn.Linear):
-            torch.nn.init.kaiming_uniform(module.weight)
+            torch.nn.init.kaiming_uniform_(module.weight)
             module.bias.data.fill_(0.01)
     
     def forward(self, x):
-        pred = self.network(x)
-        return pred
+        return self.network(x)
     

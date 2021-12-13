@@ -64,13 +64,13 @@ class Node:
             if node.activation == NNActivations.sigmoid:
                 node_grad *= node.value * (1 - node.value)
             grad += node_grad
-        GRAD_CACHE[self.get_id()] = grad
+        GRAD_CACHE[self.get_id()] += grad
 
         # compute gradients of inbound weights
         for node in self.inputs:
             wstr = f"{self.layer}_{node.id}-{self.id}"
             weight = weights[wstr]
-            GRAD_CACHE[wstr] = GRAD_CACHE[self.get_id()] * \
+            GRAD_CACHE[wstr] += GRAD_CACHE[self.get_id()] * \
                 self.value * (1 - self.value) * weight
 
     def get_id(self):
@@ -127,6 +127,23 @@ class NeuralNetworkClassifier:
                 self.weights[f"1_{i}-{j}"] = get_weight()
         
     def train(self, X, Y, epochs=10):
+        weights_history = {
+            "3_0-0": [],
+            "3_1-0": [],
+            "3_2-0": [],
+            "2_0-1": [],
+            "2_0-2": [],
+            "2_1-1": [],
+            "2_1-2": [],
+            "2_2-1": [],
+            "2_2-2": [],
+            "1_0-1": [],
+            "1_0-2": [],
+            "1_1-1": [],
+            "1_1-2": [],
+            "1_2-1": [],
+            "1_2-2": []
+        }
         Y = np.ravel(Y)
         # sgd-like + backprop
         # For epoch 1... T
@@ -138,58 +155,88 @@ class NeuralNetworkClassifier:
             t = 1
             loss = 0
 
+            # Fill out gradient cache with zeros
+            visited = set()
+            queue = SimpleQueue()
+            queue.put(self.network)
+
+            while not queue.empty():
+                curr = queue.get()
+                if curr.get_id() in visited:
+                    continue
+
+                GRAD_CACHE[curr.get_id()] = 0
+                # update weight
+                for outnode in curr.outputs:
+                    wstr = f"{outnode.layer}_{curr.id}-{outnode.id}"
+                    GRAD_CACHE[wstr] = 0
+
+                visited.add(curr.get_id())
+                for node in curr.inputs:
+                    queue.put(node)
+
             # For each xi, yi in S
             for xi, yi in zip(samplesX, samplesY):
                 # compute gradient w/ backprop
                 # compute dL/dy here, begin BFS on children
                 gamma = self.schedule(t)
-
-                pred = self.predict(xi)
-                loss += 0.5 * (pred - yi) ** 2
-                topgrad = pred - yi
-                GRAD_CACHE[self.network.get_id()] = topgrad
-                for node in self.network.inputs:
-                    GRAD_CACHE[f"{self.network.layer}_{node.id}-{self.network.id}"] = topgrad * node.value
-                visited = set()
-                queue = SimpleQueue()
-                for node in self.network.inputs:
-                    queue.put(node)
-
-                # Call backward() on each node in BFS order, on the reverse graph
-                while not queue.empty():
-                    curr = queue.get()
-                    if curr.get_id() in visited or curr.layer == 0:
-                        continue
-                    curr.backward(self.weights)
-                    visited.add(curr.get_id())
-                    for node in curr.inputs:
+                for _ in range(len(samplesX)):
+                    pred = self.predict(xi)
+                    loss += 0.5 * (pred - yi) ** 2
+                    topgrad = pred - yi
+                    GRAD_CACHE[self.network.get_id()] += topgrad
+                    for node in self.network.inputs:
+                        GRAD_CACHE[f"{self.network.layer}_{node.id}-{self.network.id}"] += topgrad * node.value
+                    visited = set()
+                    queue = SimpleQueue()
+                    for node in self.network.inputs:
                         queue.put(node)
 
-                # BFS again to update weights
-                visited.clear()
-                for node in self.network.inputs:
+                    # Call backward() on each node in BFS order, on the reverse graph
+                    while not queue.empty():
+                        curr = queue.get()
+                        if curr.get_id() in visited or curr.layer == 0:
+                            continue
+                        curr.backward(self.weights)
+                        visited.add(curr.get_id())
+                        for node in curr.inputs:
+                            queue.put(node)
+
+            # BFS at end of epoch to update weights
+            visited.clear()
+            for node in self.network.inputs:
+                queue.put(node)
+
+            while not queue.empty():
+                curr = queue.get()
+                if curr.get_id() in visited:
+                    continue
+
+                # update weight
+                for outnode in curr.outputs:
+                    wstr = f"{outnode.layer}_{curr.id}-{outnode.id}"
+                    self.weights[wstr] = self.weights[wstr] - gamma * GRAD_CACHE[wstr] * 1/len(samplesX)
+
+                visited.add(curr.get_id())
+                for node in curr.inputs:
                     queue.put(node)
 
-                while not queue.empty():
-                    curr = queue.get()
-                    if curr.get_id() in visited:
-                        continue
+            for key in weights_history.keys():
+                weights_history[key].append(self.weights[key])
 
-                    # update weight
-                    for outnode in curr.outputs:
-                        wstr = f"{outnode.layer}_{curr.id}-{outnode.id}"
-                        self.weights[wstr] = self.weights[wstr] - gamma * GRAD_CACHE[wstr]
-
-                    visited.add(curr.get_id())
-                    for node in curr.inputs:
-                        queue.put(node)
-
-                t += 1
-                GRAD_CACHE.clear()
+            t += 1
+            self.last_grad = GRAD_CACHE.copy()
+            GRAD_CACHE.clear()
 
             loss /= len(samplesX)
             LOSS_HISTORY.append(loss)
         plt.plot(np.arange(epochs), LOSS_HISTORY)
+        plt.show()
+
+        fig, axs = plt.subplots(15)
+        for i, key in enumerate(weights_history.keys()):
+            axs[i].plot(np.arange(epochs), weights_history[key], '-o')
+            axs[i].set_title(key)
         plt.show()
 
     def predict(self, x):

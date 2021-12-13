@@ -1,0 +1,35 @@
+MAP Model, v = 0.01
+Train Error: 0.0344037
+Test error: 0.0360000
+
+MAP Model, v = 0.1
+Train Error: 0.0149083
+Test error: 0.0140000
+
+MAP Model, v = 0.5
+Train Error: 0.0114679
+Test error: 0.0100000
+
+MAP Model, v = 1
+Train Error: 0.0091743
+Test error: 0.0100000
+
+MAP Model, v = 3
+Train Error: 0.0091743
+Test error: 0.0120000
+
+MAP Model, v = 5
+Train Error: 0.0091743
+Test error: 0.0120000
+
+MAP Model, v = 10
+Train Error: 0.0091743
+Test error: 0.0120000
+
+MAP Model, v = 100
+Train Error: 0.0091743
+Test error: 0.0080000
+
+MLE Model
+Train Error: 0.0091743
+Test error: 0.0080000

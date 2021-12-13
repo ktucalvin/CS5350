@@ -1,0 +1,119 @@
+=== Tanh+Xavier, depth=3, width=5
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000003
+
+=== ReLU+He, depth=3, width=5
+Train Error: 0.000000000, Avg loss: 0.000001
+Test Error: 0.000000000, Avg loss: 0.000001
+
+=== Tanh+Xavier, depth=3, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=3, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=3, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=3, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=3, width=50
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=3, width=50
+Train Error: 0.000000000, Avg loss: 0.000003
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=3, width=100
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=3, width=100
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=5, width=5
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.002000000, Avg loss: 0.022836
+
+=== ReLU+He, depth=5, width=5
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000001
+
+=== Tanh+Xavier, depth=5, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.002000000, Avg loss: 0.035641
+
+=== ReLU+He, depth=5, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=5, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=5, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=5, width=50
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=5, width=50
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=5, width=100
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.001322
+
+=== ReLU+He, depth=5, width=100
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=9, width=5
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.002000000, Avg loss: 0.013609
+
+=== ReLU+He, depth=9, width=5
+Train Error: 0.000000000, Avg loss: 0.001244
+Test Error: 0.000000000, Avg loss: 0.001237
+
+=== Tanh+Xavier, depth=9, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=9, width=10
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000001
+
+=== Tanh+Xavier, depth=9, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=9, width=25
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.002000000, Avg loss: 0.040864
+
+=== Tanh+Xavier, depth=9, width=50
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== ReLU+He, depth=9, width=50
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000000
+
+=== Tanh+Xavier, depth=9, width=100
+Train Error: 0.018348624, Avg loss: 0.092054
+Test Error: 0.012000000, Avg loss: 0.068395
+
+=== ReLU+He, depth=9, width=100
+Train Error: 0.000000000, Avg loss: 0.000000
+Test Error: 0.000000000, Avg loss: 0.000001
