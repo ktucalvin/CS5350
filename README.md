@@ -1,5 +1,96 @@
 This is a machine learning library developed by Calvin Tu for CS5350/6350 at the University of Utah.
 
+## Logistic Regression
+
+```python
+# To import and construct
+from LogisticRegression import logreg
+
+logreg.MLEClassifier()
+logreg.MAPClassifier
+# ... usage is the same as the LMS models, see below.
+```
+
+
+For the MLEClassifer, usage is exactly the same as the LMS models.
+
+For the MAPClassifier, usage is the same as the LMS models, except the constructor takes in a `variance` parameter. This
+controls the balance between the likelihood and the prior when performing logistic regression. The prior is always
+assumed to be from a gaussian distribution.
+
+## Neural Networks
+
+First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning.
+
+Basic usage:
+```python
+import numpy as np
+import datasets
+from NeuralNetworks import nn
+
+Xtrain, Ytrain, Xtest, Ytest, attributes = datasets.get_bank_note_data()
+
+Ytrain[Ytrain == -1] = 0
+Ytest[Ytest == -1] = 0
+
+def evaluate(model, label):
+    predictions = np.array([model.predict(x) for x in Xtrain]).reshape(-1,1)
+    incorrect_train = np.sum(predictions != Ytrain)
+    predictions = np.array([model.predict(x) for x in Xtest]).reshape(-1,1)
+    incorrect_test = np.sum(predictions != Ytest)
+    print(predictions)
+    print(f"{label}\nTrain Error: {float(incorrect_train) / len(Ytrain) :.5f}\nTest error: {float(incorrect_test) / len(Ytest) :.5f}")
+
+gamma_0 = 150
+d = 1e-2
+epochs = 1000
+print(f"gamma_0={gamma_0}, d={d}, epochs={epochs}")
+
+gauss_model = nn.NeuralNetworkClassifier(width, Xtrain.shape[1],
+                                            schedule=lambda t: gamma_0 / (1 + gamma_0/d * t),
+                                            get_weight=nn.WeightInitializer.gaussian)
+gauss_model.train(Xtrain, Ytrain, epochs)
+
+evaluate(gauss_model, f"NN, Gaussian weights, width={width}")
+print()
+
+zero_model = nn.NeuralNetworkClassifier(width, Xtrain.shape[1],
+                                            schedule=lambda t: gamma_0 / (1 + gamma_0/d * t),
+                                            get_weight=nn.WeightInitializer.gaussian)
+zero_model.train(Xtrain, Ytrain, epochs)
+evaluate(zero_model, f"NN, Zero weights, width={width}")
+print()
+```
+
+Unfortunately, the neural network implementation does not work for more than one training example.
+
+The constructor takes in these parameters:
+* `layer_width`: the width of hidden layers 1 and 2.
+* `dims`: the dimensionality of the training data (e.g. `Xtrain.shape[1]`).
+* `schedule`: a function that takes in a time step `t` and returns the learning rate at that time step.
+* `get_weight`: a function that returns a float. Used to initialize the weights of the network.
+
+Training and prediction is the same as for SVMs. After training is complete, a plot of the loss history as well as the
+weights value history will appear. If `train()` is called at least once, the gradients of the last epoch are available
+for inspection through the `last_grad` property.
+
+Keys of the form `n-m` represent the gradient of the node in layer `n` with id `m`. Keys of the form `L_n-m` represent
+the gradient of the weight to layer `L` from the node with id `n` to the node with id `m`.
+
+The graph is accessed through the `network` field. From here, you can access the various nodes of the network through
+the `Node.inputs` and `Node.outputs` fields.
+
+
+A PyTorch implementation is available through `torchnn.NeuralNetworkClassifier`. It works the same as any other PyTorch
+model. The constructor takes the following:
+* `depth`: Number of hidden layers
+* `width`: Width of each hidden layer
+* `dims`: Dimensionality of the input
+* `activation`: What activation to use between hidden layers. The final layer is always `nn.Sigmoid`.
+
+The weights of each linear hidden layer is initialized by calling `init_weights` with either the "he" or "xavier"
+strategies.
+
 ## Support Vector Machines
 First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning. All data should
 be augmented with a leading 1, to account for the bias; the Dual SVM will automatically strip it off in its handling of
