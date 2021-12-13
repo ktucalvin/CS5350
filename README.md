@@ -2,7 +2,7 @@ This is a machine learning library developed by Calvin Tu for CS5350/6350 at the
 
 ## Logistic Regression
 
-First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for LMS learning.
+First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for logistic regression learning.
 
 Basic usage;
 ```python
@@ -45,7 +45,7 @@ The training/prediction labels are {-1, +1}
 
 ## Neural Networks
 
-First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for SVM learning.
+First ensure all data is numeric. The `concrete` and `bank-note` datasets are set up for neural network learning.
 
 Basic usage:
 ```python
