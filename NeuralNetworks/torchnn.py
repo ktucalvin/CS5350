@@ -13,8 +13,8 @@ class NeuralNetworkClassifier(nn.Module):
         for _ in range(depth - 1):
             stack.append(nn.Linear(width, width))
             stack.append(activation())
-        stack.append(nn.Linear(width, 2))
-        stack.append(nn.Softmax())
+        stack.append(nn.Linear(width, 1))
+        stack.append(nn.Sigmoid())
         self.network = nn.Sequential(*stack)
         self.double()
     
