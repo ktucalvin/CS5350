@@ -12,12 +12,14 @@ from sklearn.compose import ColumnTransformer
 
 S, val, attributes, labels = datasets.get_ilp_data(binarize=True)
 
+del val[17304] # Holand-Netherlands only exists in test data
+
 X = np.asarray(S).reshape((25000,15))
 Y = X[:, -1].astype(np.float64)
 X = X[:, :-1]
 
 Xtest = np.asarray(val).reshape((23841,15))
-ids = Xtest[:, 0]
+ids = Xtest[:, 0].astype(np.int64)
 Xtest = Xtest[:, 1:]
 
 # To be able to impute missing values
@@ -58,15 +60,21 @@ Y = Y.reshape((-1,1))
 
 gamma_0 = 0.0001
 d = 500
-v = 0.1
+v = 2
+# model = logreg.MLEClassifier(schedule=lambda t: gamma_0 / (1 + gamma_0/d * t))
 model = logreg.MAPClassifier(schedule=lambda t: gamma_0 / (1 + gamma_0/d * t), variance=v)
 
-model.train(X, Y)
+model.train(X, Y, threshold=1e-5)
 
 predictions = [model.predict(input) for input in Xtest]
-with open("kaggle-predictions.csv", "w+", encoding="utf8") as log:
+with open(f"kaggle-logreg-v{v}.csv", "w+", encoding="utf8") as log:
     log.write("ID,Prediction\n")
-    for row_id, input in zip(ids, Xtest):
-        pred = model.predict(input)
+    for row_id, pred in zip(ids, predictions):
         log.write(f"{row_id},{pred}\n")
-        print(f"{row_id},{pred}")
+        if not row_id % 1000:
+            print(f"{row_id},{pred}")
+
+        # Row 17305 has value nonexistant in training data, interferes with one-hot encoding, "holand"
+        if row_id == 17304:
+            log.write("17305,0\n")
+            row_id += 1

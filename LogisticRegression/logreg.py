@@ -78,6 +78,4 @@ class MAPClassifier():
             t += 1
     
     def predict(self, input):
-        if sigmoid(self.w @ input) > 0.5:
-            return 1
-        return -1
+        return sigmoid(self.w @ input)

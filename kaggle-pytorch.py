@@ -62,8 +62,14 @@ Xtest = clf.fit_transform(Xtest).toarray().astype(np.float64)
 Y = Y.reshape((-1,1)).astype(np.float64)
 
 # Train model
+# :NOTE: Tuning parameters here
+DEPTH = 3
+WIDTH = 15
+LEARNING_RATE = 1e-3
 EPOCHS = 15
+BATCH_SIZE = 500
 NUM_FOLDS = 5
+print(f"[=====] Parameters:\n\tDepth: {DEPTH}\n\tWidth: {WIDTH}\n\tEpochs: {EPOCHS}\n\tFolds: {NUM_FOLDS}\n\tLearning Rate: {LEARNING_RATE}\n\tBatch Size: {BATCH_SIZE}\n")
 training_folds = np.array_split(X, NUM_FOLDS)
 training_labels_folds = np.array_split(Y, NUM_FOLDS)
 
@@ -79,9 +85,9 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         loss.backward()
         optimizer.step()
 
-        if batch % 10 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        # if batch % 10 == 0:
+        #     loss, current = loss.item(), batch * len(X)
+        #     print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
 def test_loop(dataloader, model, loss_fn):
@@ -105,34 +111,50 @@ def test_loop(dataloader, model, loss_fn):
 
 accuracies = []
 for k in range(NUM_FOLDS):
-    # TODO: assemble train/test dataset
+    print(f"===== Fold #{k}")
     train_data = torch.Tensor(np.concatenate(training_folds[:k] + training_folds[k+1:]).astype(np.float64))
     train_labels = torch.Tensor(np.concatenate(training_labels_folds[:k] + training_labels_folds[k+1:]).astype(np.float64))
-    train_loader = DataLoader(dataset=TensorDataset(train_data, train_labels), batch_size=250, shuffle=True, drop_last=False)
+    train_loader = DataLoader(dataset=TensorDataset(train_data, train_labels), batch_size=BATCH_SIZE, shuffle=True, drop_last=False)
 
     test_data = torch.Tensor(training_folds[k])
     test_labels = torch.Tensor(training_labels_folds[k])
-    test_loader = DataLoader(dataset=TensorDataset(test_data, test_labels), batch_size=250, shuffle=True, drop_last=False)
+    test_loader = DataLoader(dataset=TensorDataset(test_data, test_labels), batch_size=BATCH_SIZE, shuffle=True, drop_last=False)
 
-    model = NeuralNetworkClassifier(5, 15, 107, activation=nn.ReLU)
+    model = NeuralNetworkClassifier(DEPTH, WIDTH, 107, activation=nn.ReLU)
     model.init_weights(strategy="he")
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_fn = nn.BCELoss()
 
     for t in range(EPOCHS):
-        print(f"Epoch {t+1}\n-------------------------------")
+        print("=", end="", flush=True)
+        # print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_loader, model, loss_fn, optimizer)
-        print()
+    print()
     accuracies.append(test_loop(test_loader, model, loss_fn))
 
 print(accuracies)
-print(f"Average accuracy after {NUM_FOLDS}-fold validation: {np.average(accuracies)}")
+print(f"Average accuracy after {NUM_FOLDS}-fold validation: {np.average(accuracies) :.5f}")
+
+
+# Train Final model
+print("Training Final Model")
+final_data = torch.Tensor(X)
+final_labels = torch.Tensor(Y)
+final_loader = DataLoader(dataset=TensorDataset(final_data, final_labels), batch_size=BATCH_SIZE, shuffle=True, drop_last=False)
+model = NeuralNetworkClassifier(DEPTH, WIDTH, 107, activation=nn.ReLU)
+model.init_weights(strategy="he")
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+loss_fn = nn.BCELoss()
+for t in range(EPOCHS):
+        print("=", end="", flush=True)
+        # print(f"Epoch {t+1}\n-------------------------------")
+        train_loop(final_loader, model, loss_fn, optimizer)
 
 predictions = model(torch.Tensor(Xtest.astype(np.float64)))
 with open("kaggle-pytorch.csv", "w+", encoding="utf8") as log:
     log.write("ID,Prediction\n")
     for row_id, pred in zip(ids, predictions):
-        log.write(f"{row_id},{pred.item() :.5f}\n")
+        log.write(f"{row_id},{pred.item()}\n")
         if not row_id % 1000:
             print(f"{row_id},{pred.item() :.5f}")
         

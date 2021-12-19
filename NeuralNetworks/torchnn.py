@@ -17,7 +17,6 @@ class NeuralNetworkClassifier(nn.Module):
         stack.append(nn.Linear(width, 1))
         stack.append(nn.Sigmoid())
         self.network = nn.Sequential(*stack)
-        # self.double()
     
     def init_weights(self, strategy="xavier"):
         if strategy == "xavier":
