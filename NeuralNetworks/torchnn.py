@@ -9,14 +9,15 @@ class NeuralNetworkClassifier(nn.Module):
     def __init__(self, depth, width, dims, activation=nn.Sigmoid):
         super(NeuralNetworkClassifier, self).__init__()
 
-        stack = [nn.Linear(dims, width), activation()]
+        stack = [nn.Linear(dims, width), activation(), nn.BatchNorm1d(width)]
         for _ in range(depth - 1):
             stack.append(nn.Linear(width, width))
             stack.append(activation())
+            stack.append(nn.BatchNorm1d(width))
         stack.append(nn.Linear(width, 1))
         stack.append(nn.Sigmoid())
         self.network = nn.Sequential(*stack)
-        self.double()
+        # self.double()
     
     def init_weights(self, strategy="xavier"):
         if strategy == "xavier":
