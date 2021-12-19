@@ -4,6 +4,11 @@ import math
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+def sgn(x):
+    if x > 0:
+        return 1
+    return -1
+
 class MLEClassifier():
     def __init__(self, schedule):
         self.schedule = schedule
@@ -42,9 +47,7 @@ class MLEClassifier():
             #     t += 1
     
     def predict(self, input):
-        if sigmoid(self.w @ input) > 0.5:
-            return 1
-        return -1
+        return sigmoid(self.w @ input)
 
 class MAPClassifier():
     def __init__(self, schedule, variance):
@@ -75,6 +78,4 @@ class MAPClassifier():
             t += 1
     
     def predict(self, input):
-        if sigmoid(self.w @ input) > 0.5:
-            return 1
-        return -1
+        return sigmoid(self.w @ input)
